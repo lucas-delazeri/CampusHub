@@ -92,10 +92,28 @@ class MainActivity : ComponentActivity() {
                     },
                     onGoogleSignIn = {
                         signInGoogle()
+                    },
+                    onForgotPassword = { email ->
+                        resetPassword(email)
                     }
                 )
             }
         }
+    }
+
+    private fun resetPassword(email: String) {
+        if (email.isBlank() || !validEmail(email)) {
+            Toast.makeText(this, "Por favor, digite seu e-mail no campo acima primeiro.", Toast.LENGTH_LONG).show()
+            return
+        }
+        auth.sendPasswordResetEmail(email)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    Toast.makeText(this, "E-mail de redefinição enviado com sucesso!", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(this, "Erro: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                }
+            }
     }
 
     private fun login(email: String, password: String) {
@@ -121,11 +139,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private val launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        result ->
-                if (result.resultCode == Activity.RESULT_OK) {
-                    val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                    handleResults(task)
-                }
+            result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            handleResults(task)
+        }
     }
 
     private fun handleResults(task: Task<GoogleSignInAccount>) {
@@ -160,18 +178,28 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun LoginScreen(onLogin: (String, String) -> Unit, onRegisterClick: () -> Unit, onGoogleSignIn: () -> Unit) {
+fun LoginScreen(
+    onLogin: (String, String) -> Unit,
+    onRegisterClick: () -> Unit,
+    onGoogleSignIn: () -> Unit,
+    onForgotPassword: (String) -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF7F8FA))
     ) {
-        LoginContent(onLogin, onRegisterClick, onGoogleSignIn)
+        LoginContent(onLogin, onRegisterClick, onGoogleSignIn, onForgotPassword)
     }
 }
 
 @Composable
-fun LoginContent(onLogin: (String, String) -> Unit, onRegisterClick: () -> Unit, onGoogleSignIn: () -> Unit) {
+fun LoginContent(
+    onLogin: (String, String) -> Unit,
+    onRegisterClick: () -> Unit,
+    onGoogleSignIn: () -> Unit,
+    onForgotPassword: (String) -> Unit
+) {
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -196,7 +224,7 @@ fun LoginContent(onLogin: (String, String) -> Unit, onRegisterClick: () -> Unit,
         )
 
         Text(
-            text = "Welcome Back",
+            text = "CampusHub",
             color = Color.Black,
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
@@ -230,7 +258,7 @@ fun LoginContent(onLogin: (String, String) -> Unit, onRegisterClick: () -> Unit,
             modifier = Modifier
                 .align(Alignment.End)
                 .padding(vertical = 8.dp)
-                .clickable {}
+                .clickable { onForgotPassword(email) }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -420,6 +448,6 @@ fun validPass(password: String): Boolean {
 @Composable
 fun LoginScreenPreview() {
     LoginTheme {
-        LoginScreen(onLogin = {_, _ ->}, onRegisterClick = {}, onGoogleSignIn = {})
+        LoginScreen(onLogin = {_, _ ->}, onRegisterClick = {}, onGoogleSignIn = {}, onForgotPassword = {})
     }
 }
