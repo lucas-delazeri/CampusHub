@@ -1,0 +1,39 @@
+# Arquivos de Build do Gradle
+.gradle/
+build/
+/*/build/
+
+# Configurações locais (contém o caminho do SDK e chaves sensíveis)
+local.properties
+
+# Arquivos do Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.shelf/
+
+# Arquivos específicos do Kotlin
+.kotlin/
+
+# Logs e arquivos temporários
+*.log
+captures/
+
+# Arquivos de segredos (Firebase e Chaves de Assinatura)
+# IMPORTANTE: google-services.json contém IDs do projeto. 
+# Muitos desenvolvedores optam por ignorá-lo em repositórios públicos.
+google-services.json
+*.jks
+*.keystore
+*.pk8
+*.pem
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Cache de ferramentas
+.externalNativeBuild
+.cxx/
