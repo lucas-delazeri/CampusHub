@@ -3,7 +3,6 @@ package com.example.login
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -335,7 +334,10 @@ fun EmailField(email: String, onValueChange: (String) -> Unit) {
                 unfocusedContainerColor = Color.White,
                 focusedBorderColor = Color(0xFF0F93FF),
                 unfocusedBorderColor = Color.LightGray,
-                errorBorderColor = Color.Red
+                errorBorderColor = Color.Red,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                errorTextColor = Color.Black
             ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             isError = isError,
@@ -371,7 +373,10 @@ fun PasswordField(password: String, onValueChange: (String) -> Unit) {
                 unfocusedContainerColor = Color.White,
                 focusedBorderColor = Color(0xFF673AB7),
                 unfocusedBorderColor = Color.LightGray,
-                errorBorderColor = Color.Red
+                errorBorderColor = Color.Red,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                errorTextColor = Color.Black
             ),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             visualTransformation = PasswordVisualTransformation(),
