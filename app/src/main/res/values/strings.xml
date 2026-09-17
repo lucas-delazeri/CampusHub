@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">Login</string>
-    <string name="title_activity_home">HomeActivity</string>
+    <string name="app_name">CampusHub</string>
+    <string name="title_activity_home">CampusHub - Home</string>
 </resources>
