@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -529,11 +531,21 @@ fun ProfileTab(
             onValueChange = {},
             label = { Text("E-mail") },
             enabled = false,
+            // leadingIcon adiciona um ícone de e-mail no início (opcional)
+            leadingIcon = {
+                Icon(Icons.Default.Email, contentDescription = null, tint = Color.Gray)
+            },
+            // trailingIcon adiciona um cadeado no final para indicar que não é editável (opcional)
+            trailingIcon = {
+                Icon(Icons.Default.Lock, contentDescription = "Campo bloqueado", tint = Color.LightGray, modifier = Modifier.size(20.dp))
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                disabledContainerColor = Color(0xFFEBEBEB),
-                disabledBorderColor = Color.LightGray
+                disabledContainerColor = Color(0xFFF3F4F6), // Um cinza bem claro, limpo e sólido
+                disabledBorderColor = Color(0xFFE5E7EB),    // Borda sutil que combina com o fundo
+                disabledTextColor = Color.Black,            // Mantém a leitura forte que você pediu antes
+                disabledLabelColor = Color.DarkGray         // Contraste agradável para a label
             ),
             singleLine = true
         )
