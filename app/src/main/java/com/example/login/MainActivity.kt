@@ -452,8 +452,8 @@ fun validEmail(email: String): Boolean {
 }
 
 fun validPass(password: String): Boolean {
-    val emailTemplate = "^(?=.*[A-Z])(?=.*\\d).{8,}\$"
-    val template = Pattern.compile(emailTemplate)
+    val passwordTemplate = "^(?=.*[A-Z])(?=.*\\d).{8,}\$"
+    val template = Pattern.compile(passwordTemplate)
     val matcher = template.matcher(password)
     return matcher.matches()
 }
