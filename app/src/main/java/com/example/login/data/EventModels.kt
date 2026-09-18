@@ -3,6 +3,8 @@ package com.example.login.data
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 data class Event(
     val id: Int,
@@ -15,6 +17,9 @@ data class Event(
 )
 
 object EventRepository {
+    private val db = FirebaseDatabase.getInstance().reference
+    private val auth = FirebaseAuth.getInstance()
+
     val allEvents = listOf(
         Event(
             id = 1,
@@ -66,15 +71,39 @@ object EventRepository {
     var enrolledEventIds by mutableStateOf(setOf<Int>())
         private set
 
+    fun loadUserEnrollments() {
+        val userId = auth.currentUser?.uid ?: return
+        db.child("users").child(userId).child("enrolledEvents")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.exists()) {
+                    val list = snapshot.value as? List<*>
+                    enrolledEventIds = list?.filterIsInstance<Long>()?.map { it.toInt() }?.toSet() ?: emptySet()
+                }
+            }
+    }
+
+    private fun syncWithDatabase() {
+        val userId = auth.currentUser?.uid ?: return
+        db.child("users").child(userId).child("enrolledEvents")
+            .setValue(enrolledEventIds.toList())
+    }
+
     fun enroll(eventId: Int) {
         enrolledEventIds = enrolledEventIds + eventId
+        syncWithDatabase()
     }
 
     fun unenroll(eventId: Int) {
         enrolledEventIds = enrolledEventIds - eventId
+        syncWithDatabase()
     }
 
     fun isEnrolled(eventId: Int): Boolean {
         return enrolledEventIds.contains(eventId)
+    }
+
+    fun clearLocalData() {
+        enrolledEventIds = emptySet()
     }
 }

@@ -18,6 +18,10 @@ class HomeViewModel : ViewModel() {
     var userName by mutableStateOf(auth.currentUser?.displayName ?: "Estudante")
     val email: String = auth.currentUser?.email ?: "No email"
 
+    init {
+        EventRepository.loadUserEnrollments()
+    }
+
     fun changeTab(tabIndex: Int) {
         currentTab = tabIndex
     }
@@ -55,6 +59,7 @@ class HomeViewModel : ViewModel() {
 
     fun signOut(onSignOutComplete: () -> Unit) {
         auth.signOut()
+        EventRepository.clearLocalData()
         onSignOutComplete()
     }
 }
