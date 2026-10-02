@@ -374,8 +374,9 @@ fun EventDetailScreen(
 
     if (commentToEdit != null) {
         AlertDialog(
+            containerColor = Color.White,
             onDismissRequest = { commentToEdit = null },
-            title = { Text("Editar Comentário") },
+            title = { Text("Editar Comentário", color = Color(0xFF4A4A4A)) },
             text = {
                 OutlinedTextField(
                     value = editText,
