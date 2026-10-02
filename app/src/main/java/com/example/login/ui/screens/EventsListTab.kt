@@ -3,6 +3,7 @@ package com.example.login.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -99,29 +100,47 @@ fun EventsListTab(onEventClick: (Event) -> Unit) {
         ) {
             Button(
                 onClick = { selectedFilter = "todos" },
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 0.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (selectedFilter == "todos") Color(0xFF0F93FF) else Color.LightGray
                 )
             ) {
-                Text("Todos")
+                Text(
+                    text = "Todos",
+                    fontSize = 12.sp,
+                    maxLines = 1
+                )
             }
 
             Button(
                 onClick = { selectedFilter = "proximos" },
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 0.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (selectedFilter == "proximos") Color(0xFF0F93FF) else Color.LightGray
                 )
             ) {
-                Text("Próximos")
+                Text(
+                    text = "Próximos",
+                    fontSize = 12.sp,
+                    maxLines = 1
+                )
             }
 
             Button(
                 onClick = { selectedFilter = "encerrados" },
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 0.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (selectedFilter == "encerrados") Color(0xFF0F93FF) else Color.LightGray
                 )
             ) {
-                Text("Encerrados")
+                Text(
+                    text = "Encerrados",
+                    fontSize = 12.sp,
+                    maxLines = 1
+                )
             }
         }
 
