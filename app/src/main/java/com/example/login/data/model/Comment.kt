@@ -6,5 +6,6 @@ data class Comment(
     val authorId: String = "",
     val authorName: String = "",
     val content: String = "",
-    val publishedAt: String = ""
+    val publishedAt: String = "",
+    val rating: Int? = null
 )

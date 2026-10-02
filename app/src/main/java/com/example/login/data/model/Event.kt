@@ -7,5 +7,6 @@ data class Event(
     val date: String,
     val location: String,
     val organizer: String,
-    val category: String
+    val category: String,
+    val isEnded: Boolean = false
 )

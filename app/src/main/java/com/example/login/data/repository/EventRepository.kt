@@ -26,7 +26,8 @@ object EventRepository {
             date = "24 de Setembro, 14:00",
             location = "Auditório Central - Bloco A",
             organizer = "Diretório Acadêmico",
-            category = "Carreira"
+            category = "Carreira",
+            isEnded = true
         ),
         Event(
             id = 2,
@@ -58,7 +59,7 @@ object EventRepository {
         Event(
             id = 5,
             title = "Palestra: Saúde Mental na Vida Acadêmica",
-            description = "Estratégias fundamentais de mindfulness, gestão de tempo e inteligência emotional para lidar com o estresse dos exames e manter o equilíbrio na rotina universitária.",
+            description = "Estratégias fundamentais de mindfulness, gestão de tempo e inteligência emocional para lidar com o estresse dos exames e manter o equilíbrio na rotina universitária.",
             date = "22 de Outubro, 10:30",
             location = "Anfiteatro da Biblioteca Central",
             organizer = "Departamento de Psicologia",
@@ -167,7 +168,7 @@ object EventRepository {
         db.child("events").child(eventId.toString()).child("comments").removeEventListener(listener)
     }
 
-    fun addComment(eventId: Int, content: String, onResult: (Boolean, String?) -> Unit) {
+    fun addComment(eventId: Int, content: String, rating: Int? = null, onResult: (Boolean, String?) -> Unit) {
         val user = auth.currentUser
         if (user == null) {
             onResult(false, "Usuário não autenticado")
@@ -198,7 +199,8 @@ object EventRepository {
             authorId = user.uid,
             authorName = authorName,
             content = content.trim(),
-            publishedAt = dateStr
+            publishedAt = dateStr,
+            rating = rating
         )
 
         commentsRef.child(commentId).setValue(comment)
@@ -234,6 +236,60 @@ object EventRepository {
         val commentRef = db.child("events").child(eventId.toString()).child("comments").child(commentId)
         commentRef.removeValue()
             .addOnSuccessListener { onResult(true, "Comentário excluído!") }
+            .addOnFailureListener { onResult(false, it.localizedMessage) }
+    }
+
+    fun listenToRatings(
+        eventId: Int,
+        onRatingsChanged: (average: Double, totalCount: Int, userRating: Int?) -> Unit
+    ): ValueEventListener {
+        val ratingsRef = db.child("events").child(eventId.toString()).child("ratings")
+        val currentUserId = auth.currentUser?.uid
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var sum = 0
+                var count = 0
+                var userRating: Int? = null
+
+                for (child in snapshot.children) {
+                    val rating = child.getValue(Int::class.java)
+                    if (rating != null) {
+                        sum += rating
+                        count++
+                        if (child.key == currentUserId) {
+                            userRating = rating
+                        }
+                    }
+                }
+
+                val avg = if (count > 0) sum.toDouble() / count else 0.0
+                onRatingsChanged(avg, count, userRating)
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        }
+        ratingsRef.addValueEventListener(listener)
+        return listener
+    }
+
+    fun removeRatingsListener(eventId: Int, listener: ValueEventListener) {
+        db.child("events").child(eventId.toString()).child("ratings").removeEventListener(listener)
+    }
+
+    fun rateEvent(eventId: Int, rating: Int, onResult: (Boolean, String?) -> Unit) {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            onResult(false, "Usuário não autenticado")
+            return
+        }
+        if (rating !in 1..5) {
+            onResult(false, "Nota inválida")
+            return
+        }
+
+        db.child("events").child(eventId.toString()).child("ratings").child(userId)
+            .setValue(rating)
+            .addOnSuccessListener { onResult(true, "Avaliação salva com sucesso!") }
             .addOnFailureListener { onResult(false, it.localizedMessage) }
     }
 }
