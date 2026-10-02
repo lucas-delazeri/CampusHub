@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,6 +24,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -51,6 +52,8 @@ import androidx.compose.ui.unit.sp
 import com.example.login.data.model.Comment
 import com.example.login.data.model.Event
 import com.example.login.data.repository.EventRepository
+import com.example.login.ui.components.EventRatingSummaryCard
+import com.example.login.ui.components.StudentEventRatingCard
 
 @Composable
 fun EventDetailScreen(
@@ -60,9 +63,10 @@ fun EventDetailScreen(
     currentUserId: String?,
     onToggleEnroll: () -> Unit,
     onToggleFavorite: () -> Unit,
-    onAddComment: (String) -> Unit,
+    onAddComment: (String, Int?) -> Unit,
     onEditComment: (String, String) -> Unit,
-    onDeleteComment: (String) -> Unit
+    onDeleteComment: (String) -> Unit,
+    onRateEvent: (Int) -> Unit
 ) {
     var comments by remember { mutableStateOf<List<Comment>>(emptyList()) }
     var newCommentText by remember { mutableStateOf("") }
@@ -70,12 +74,27 @@ fun EventDetailScreen(
     var editText by remember { mutableStateOf("") }
     var commentToDelete by remember { mutableStateOf<Comment?>(null) }
 
+    var averageRating by remember { mutableStateOf(0.0) }
+    var totalRatings by remember { mutableStateOf(0) }
+    var userRating by remember { mutableStateOf<Int?>(null) }
+
     DisposableEffect(event.id) {
         val listener = EventRepository.listenToComments(event.id) { updatedList ->
             comments = updatedList
         }
         onDispose {
             EventRepository.removeCommentsListener(event.id, listener)
+        }
+    }
+
+    DisposableEffect(event.id) {
+        val ratingsListener = EventRepository.listenToRatings(event.id) { avg, count, mine ->
+            averageRating = avg
+            totalRatings = count
+            userRating = mine
+        }
+        onDispose {
+            EventRepository.removeRatingsListener(event.id, ratingsListener)
         }
     }
 
@@ -155,6 +174,13 @@ fun EventDetailScreen(
             }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        EventRatingSummaryCard(
+            averageRating = averageRating,
+            totalCount = totalRatings
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
@@ -211,6 +237,17 @@ fun EventDetailScreen(
             )
         }
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        StudentEventRatingCard(
+            isEnrolled = isEnrolled,
+            isEnded = event.isEnded,
+            userRating = userRating,
+            onRatingSelected = { rating ->
+                onRateEvent(rating)
+            }
+        )
+
         Spacer(modifier = Modifier.height(32.dp))
 
         Row(
@@ -255,7 +292,7 @@ fun EventDetailScreen(
                 IconButton(
                     onClick = {
                         if (newCommentText.isNotBlank()) {
-                            onAddComment(newCommentText)
+                            onAddComment(newCommentText, userRating)
                             newCommentText = ""
                         }
                     },
@@ -342,9 +379,7 @@ fun EventDetailScreen(
                                             )
                                         }
                                         IconButton(
-                                            onClick = {
-                                                commentToDelete = comment
-                                            },
+                                            onClick = { commentToDelete = comment },
                                             modifier = Modifier.size(28.dp)
                                         ) {
                                             Icon(
@@ -365,6 +400,26 @@ fun EventDetailScreen(
                                 fontSize = 14.sp,
                                 color = Color.DarkGray
                             )
+
+                            comment.rating?.let { rating ->
+                                if (rating > 0) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        for (i in 1..5) {
+                                            Icon(
+                                                imageVector = if (i <= rating) Icons.Default.Star else Icons.Outlined.Star,
+                                                contentDescription = "Nota $rating de 5",
+                                                tint = if (i <= rating) Color(0xFFFFC107) else Color.LightGray,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

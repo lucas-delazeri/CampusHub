@@ -103,8 +103,8 @@ fun MainHubScreen(
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     },
-                    onAddComment = { content ->
-                        viewModel.addComment(selectedEvent.id, content) { message ->
+                    onAddComment = { content, rating ->
+                        viewModel.addComment(selectedEvent.id, content, rating) { message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     },
@@ -115,6 +115,11 @@ fun MainHubScreen(
                     },
                     onDeleteComment = { commentId ->
                         viewModel.deleteComment(selectedEvent.id, commentId) { message ->
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onRateEvent = { rating ->
+                        viewModel.rateEvent(selectedEvent.id, rating) { message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     }
