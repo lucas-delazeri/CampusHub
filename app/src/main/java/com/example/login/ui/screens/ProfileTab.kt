@@ -123,7 +123,7 @@ fun ProfileTab(
             Text("Salvar Alterações", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(10.dp))
 
         Button(
             onClick = onSignOut,
