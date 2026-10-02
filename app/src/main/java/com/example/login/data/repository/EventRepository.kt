@@ -1,20 +1,18 @@
-package com.example.login.data
+package com.example.login.data.repository
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.example.login.data.model.Comment
+import com.example.login.data.model.Event
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
-
-data class Event(
-    val id: Int,
-    val title: String,
-    val description: String,
-    val date: String,
-    val location: String,
-    val organizer: String,
-    val category: String
-)
+import com.google.firebase.database.ValueEventListener
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 object EventRepository {
     private val db = FirebaseDatabase.getInstance().reference
@@ -141,5 +139,101 @@ object EventRepository {
     fun clearLocalData() {
         enrolledEventIds = emptySet()
         favoriteEventsId = emptySet()
+    }
+
+    fun listenToComments(eventId: Int, onCommentsChanged: (List<Comment>) -> Unit): ValueEventListener {
+        val commentsRef = db.child("events").child(eventId.toString()).child("comments")
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = mutableListOf<Comment>()
+                for (child in snapshot.children) {
+                    val comment = child.getValue(Comment::class.java)
+                    if (comment != null) {
+                        list.add(comment)
+                    }
+                }
+                onCommentsChanged(list)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // handle error
+            }
+        }
+        commentsRef.addValueEventListener(listener)
+        return listener
+    }
+
+    fun removeCommentsListener(eventId: Int, listener: ValueEventListener) {
+        db.child("events").child(eventId.toString()).child("comments").removeEventListener(listener)
+    }
+
+    fun addComment(eventId: Int, content: String, onResult: (Boolean, String?) -> Unit) {
+        val user = auth.currentUser
+        if (user == null) {
+            onResult(false, "Usuário não autenticado")
+            return
+        }
+
+        if (content.isBlank()) {
+            onResult(false, "O comentário não pode ser vazio")
+            return
+        }
+
+        val commentsRef = db.child("events").child(eventId.toString()).child("comments")
+        val commentId = commentsRef.push().key ?: run {
+            onResult(false, "Erro ao gerar ID do comentário")
+            return
+        }
+
+        val authorName = user.displayName?.takeIf { it.isNotBlank() }
+            ?: user.email?.substringBefore("@")
+            ?: "Estudante"
+
+        val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        val dateStr = dateFormat.format(Date())
+
+        val comment = Comment(
+            id = commentId,
+            eventId = eventId,
+            authorId = user.uid,
+            authorName = authorName,
+            content = content.trim(),
+            publishedAt = dateStr
+        )
+
+        commentsRef.child(commentId).setValue(comment)
+            .addOnSuccessListener { onResult(true, "Comentário adicionado!") }
+            .addOnFailureListener { onResult(false, it.localizedMessage) }
+    }
+
+    fun editComment(eventId: Int, commentId: String, newContent: String, onResult: (Boolean, String?) -> Unit) {
+        val user = auth.currentUser
+        if (user == null) {
+            onResult(false, "Usuário não autenticado")
+            return
+        }
+
+        if (newContent.isBlank()) {
+            onResult(false, "O comentário não pode ser vazio")
+            return
+        }
+
+        val commentRef = db.child("events").child(eventId.toString()).child("comments").child(commentId)
+        commentRef.child("content").setValue(newContent.trim())
+            .addOnSuccessListener { onResult(true, "Comentário editado!") }
+            .addOnFailureListener { onResult(false, it.localizedMessage) }
+    }
+
+    fun deleteComment(eventId: Int, commentId: String, onResult: (Boolean, String?) -> Unit) {
+        val user = auth.currentUser
+        if (user == null) {
+            onResult(false, "Usuário não autenticado")
+            return
+        }
+
+        val commentRef = db.child("events").child(eventId.toString()).child("comments").child(commentId)
+        commentRef.removeValue()
+            .addOnSuccessListener { onResult(true, "Comentário excluído!") }
+            .addOnFailureListener { onResult(false, it.localizedMessage) }
     }
 }

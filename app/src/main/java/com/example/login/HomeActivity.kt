@@ -6,9 +6,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.ViewModelProvider
-import com.example.login.ui.HomeViewModel
-import com.example.login.ui.MainHubScreen
+import com.example.login.ui.screens.MainHubScreen
 import com.example.login.ui.theme.LoginTheme
+import com.example.login.ui.viewmodel.HomeViewModel
 
 class HomeActivity : ComponentActivity() {
 
