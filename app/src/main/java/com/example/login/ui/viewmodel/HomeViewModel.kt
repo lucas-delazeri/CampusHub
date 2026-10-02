@@ -77,9 +77,14 @@ class HomeViewModel : ViewModel() {
     val currentUserId: String?
         get() = auth.currentUser?.uid
 
-    fun addComment(eventId: Int, content: String, onResultMessage: (String) -> Unit) {
-        EventRepository.addComment(eventId, content) { success, message ->
-            onResultMessage(message ?: if (success) "Comentário adicionado!" else "Erro ao comentar")
+    fun addComment(
+        eventId: Int,
+        content: String,
+        rating: Int?,
+        onResultMessage: (String) -> Unit
+    ) {
+        EventRepository.addComment(eventId, content, rating) { success, message ->
+            onResultMessage(message ?: if (success) "Comentário adicionado!" else "Erro ao adicionar comentário")
         }
     }
 
@@ -92,6 +97,12 @@ class HomeViewModel : ViewModel() {
     fun deleteComment(eventId: Int, commentId: String, onResultMessage: (String) -> Unit) {
         EventRepository.deleteComment(eventId, commentId) { success, message ->
             onResultMessage(message ?: if (success) "Comentário excluído!" else "Erro ao excluir")
+        }
+    }
+
+    fun rateEvent(eventId: Int, rating: Int, onResultMessage: (String) -> Unit) {
+        EventRepository.rateEvent(eventId, rating) { success, message ->
+            onResultMessage(message ?: if (success) "Avaliação salva!" else "Erro ao avaliar")
         }
     }
 }
