@@ -28,8 +28,10 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -59,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.login.data.Event
 import com.example.login.data.EventRepository
+import com.example.login.data.EventRepository.isFavorite
 
 @Composable
 fun MainHubScreen(
@@ -131,6 +134,11 @@ fun MainHubScreen(
                     isEnrolled = viewModel.isEventEnrolled(selectedEvent.id),
                     onToggleEnroll = {
                         viewModel.toggleEnrollment(selectedEvent) { message ->
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onToggleFavorite = {
+                        viewModel.toggleFavorite(selectedEvent) { message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -339,11 +347,26 @@ fun EventCard(event: Event, onClick: () -> Unit, trailingAction: @Composable (()
                 trailingAction()
             } else {
                 val isEnrolled = EventRepository.isEnrolled(event.id)
+                val isFavorite = isFavorite(event.id)
                 Icon(
-                    imageVector = if (isEnrolled) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                    imageVector = if (isEnrolled) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
                     contentDescription = null,
                     tint = if (isEnrolled) Color(0xFF0F93FF) else Color.LightGray,
                     modifier = Modifier.size(24.dp)
+                )
+                Icon(
+                    imageVector = if (isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                    contentDescription = "Favoritar evento",
+                    tint = if (isFavorite) Color(0xFF0F93FF) else Color.LightGray,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable {
+                            if (isFavorite) {
+                                EventRepository.unfavorite(event.id)
+                            } else {
+                                EventRepository.favorited(event.id)
+                            }
+                        }
                 )
             }
         }
@@ -355,7 +378,8 @@ fun EventDetailScreen(
     event: Event,
     onBack: () -> Unit,
     isEnrolled: Boolean,
-    onToggleEnroll: () -> Unit
+    onToggleEnroll: () -> Unit,
+    onToggleFavorite: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -462,6 +486,27 @@ fun EventDetailScreen(
         ) {
             Text(
                 text = if (isEnrolled) "Cancelar Inscrição" else "Inscrever-se no Evento",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        }
+
+        Spacer(modifier = Modifier.padding(8.dp))
+
+        Button(
+            onClick = onToggleFavorite,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isFavorite(eventId = event.id)) Color(0xFFDC3545) else Color(0xFF0F93FF)
+            ),
+
+        ) {
+            Text(
+                text = if (isFavorite(eventId = event.id)) "Desfavoritar" else "Adicionar aos favoritos",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White

@@ -20,6 +20,7 @@ class HomeViewModel : ViewModel() {
 
     init {
         EventRepository.loadUserEnrollments()
+        EventRepository.loadUserFavoriteEvents()
     }
 
     fun changeTab(tabIndex: Int) {
@@ -37,6 +38,16 @@ class HomeViewModel : ViewModel() {
         } else {
             EventRepository.enroll(event.id)
             onResultMessage("Inscrição realizada com sucesso!")
+        }
+    }
+
+    fun toggleFavorite(event: Event, onResultMessage: (String) -> Unit) {
+        if (EventRepository.isFavorite(event.id)) {
+            EventRepository.unfavorite(event.id)
+            onResultMessage("Evento desfavoritado!")
+        } else {
+            EventRepository.favorited(event.id)
+            onResultMessage("Evento favoritado!")
         }
     }
 

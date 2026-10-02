@@ -103,7 +103,43 @@ object EventRepository {
         return enrolledEventIds.contains(eventId)
     }
 
+    var favoriteEventsId by mutableStateOf(setOf<Int>())
+        private set
+
+    fun loadUserFavoriteEvents() {
+        val userId = auth.currentUser?.uid ?: return
+        db.child("users").child(userId).child("favoriteEvents")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.exists()) {
+                    val list = snapshot.value as? List<*>
+                    favoriteEventsId = list?.filterIsInstance<Long>()?.map { it.toInt() }?.toSet() ?: emptySet()
+                }
+            }
+    }
+
+    private fun syncFavoriteEventsWithDatabase() {
+        val userId = auth.currentUser?.uid ?: return
+        db.child("users").child(userId).child("favoriteEvents")
+            .setValue(favoriteEventsId.toList())
+    }
+
+    fun favorited(eventId: Int) {
+        favoriteEventsId = favoriteEventsId + eventId
+        syncFavoriteEventsWithDatabase()
+    }
+
+    fun unfavorite(eventId: Int) {
+        favoriteEventsId = favoriteEventsId - eventId
+        syncFavoriteEventsWithDatabase()
+    }
+
+    fun isFavorite(eventId: Int): Boolean {
+        return favoriteEventsId.contains(eventId)
+    }
+
     fun clearLocalData() {
         enrolledEventIds = emptySet()
+        favoriteEventsId = emptySet()
     }
 }
