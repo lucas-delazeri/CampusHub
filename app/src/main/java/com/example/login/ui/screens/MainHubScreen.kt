@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Person
@@ -42,6 +43,17 @@ fun MainHubScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    if (selectedEvent != null) {
+                        IconButton(onClick = { viewModel.selectedEvent = null }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Voltar",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                },
                 title = {
                     val title = when {
                         selectedEvent != null -> "Detalhes do Evento"
@@ -49,10 +61,20 @@ fun MainHubScreen(
                         viewModel.currentTab == 1 -> "Meus Eventos"
                         else -> "Perfil"
                     }
-                    Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+
+                    Text(
+                        text = title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color.White
+                    )
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.signOut(onNavigateToLogin) }) {
+                    IconButton(
+                        onClick = {
+                            viewModel.signOut(onNavigateToLogin)
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = "Sair da conta",
@@ -60,7 +82,9 @@ fun MainHubScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF22396F))
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF22396F)
+                )
             )
         },
         bottomBar = {

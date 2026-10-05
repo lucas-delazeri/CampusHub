@@ -17,7 +17,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddComment
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -59,7 +58,6 @@ import com.example.login.ui.components.StudentEventRatingCard
 @Composable
 fun EventDetailScreen(
     event: Event,
-    onBack: () -> Unit,
     isEnrolled: Boolean,
     currentUserId: String?,
     onToggleEnroll: () -> Unit,
@@ -67,7 +65,8 @@ fun EventDetailScreen(
     onAddComment: (String, Int?) -> Unit,
     onEditComment: (String, String, Int?) -> Unit,
     onDeleteComment: (String) -> Unit,
-    onRateEvent: (Int) -> Unit
+    onRateEvent: (Int) -> Unit,
+    onBack: () -> Unit,
 ) {
     var comments by remember { mutableStateOf<List<Comment>>(emptyList()) }
     var newCommentText by remember { mutableStateOf("") }
@@ -106,23 +105,6 @@ fun EventDetailScreen(
             .verticalScroll(rememberScrollState())
             .padding(24.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.Black)
-            }
-            Text(
-                text = "Detalhes do Evento",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
 
         Box(
             modifier = Modifier
