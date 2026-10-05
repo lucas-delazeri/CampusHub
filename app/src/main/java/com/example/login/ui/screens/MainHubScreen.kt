@@ -132,6 +132,9 @@ fun MainHubScreen(
                         onUnenroll = { id ->
                             EventRepository.unenroll(id)
                             Toast.makeText(context, "Inscrição cancelada!", Toast.LENGTH_SHORT).show()
+                        },
+                        onUnfavorite = { _ ->
+                            Toast.makeText(context, "Removido dos favoritos!", Toast.LENGTH_SHORT).show()
                         }
                     )
                     2 -> ProfileTab(
