@@ -240,7 +240,7 @@ fun LoginContent(
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Login to your account",
+            text = "Faça seu login",
             color = Color.Gray,
             fontSize = 16.sp,
             modifier = Modifier
@@ -260,7 +260,7 @@ fun LoginContent(
         }
 
         Text(
-            text = "Forgot Password?",
+            text = "Esqueceu a senha?",
             color = Color(0xFF0F93FF),
             fontSize = 14.sp,
             modifier = Modifier
@@ -288,7 +288,7 @@ fun LoginContent(
         ) {
             HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
             Text(
-                text = "Or sign in with",
+                text = "Ou faça login com",
                 color = Color.Gray,
                 fontSize = 14.sp,
                 modifier = Modifier.padding(horizontal = 16.dp)
@@ -335,7 +335,7 @@ fun EmailField(email: String, onValueChange: (String) -> Unit) {
                 onValueChange(it)
                 isError = !validEmail(it)
             },
-            placeholder = { Text("Email Address", color = Color.Gray) },
+            placeholder = { Text("Email", color = Color.Gray) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -354,7 +354,7 @@ fun EmailField(email: String, onValueChange: (String) -> Unit) {
         )
         if (isError) {
             Text(
-                text = "Please enter a valid email",
+                text = "Por favor insira um email válido",
                 color = Color.Red,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(start = 8.dp, top = 4.dp)
@@ -374,7 +374,7 @@ fun PasswordField(password: String, onValueChange: (String) -> Unit) {
                 onValueChange(it)
                 isError = !validPass(it)
             },
-            placeholder = { Text("Password", color = Color.Gray) },
+            placeholder = { Text("Senha", color = Color.Gray) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -394,7 +394,7 @@ fun PasswordField(password: String, onValueChange: (String) -> Unit) {
         )
         if (isError) {
             Text(
-                text = "Password must be 8+ chars with a capital and a number",
+                text = "A senha precisa ter 8+ caracteres com uma letra maiúscula e um número",
                 color = Color.Red,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(start = 8.dp, top = 4.dp)
@@ -412,12 +412,12 @@ fun RegisterAncor(onClick: () -> Unit) {
         horizontalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Don't have any account? ",
+            text = "Não possui conta? ",
             color = Color.Gray,
             fontSize = 14.sp
         )
         Text(
-            text = "Signup",
+            text = "Registre-se",
             color = Color(0xFF0F93FF),
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
