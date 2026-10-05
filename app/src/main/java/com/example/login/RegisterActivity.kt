@@ -120,7 +120,7 @@ fun RegisterContent(onRegister: (String, String) -> Unit) {
         )
 
         Text(
-            text = "Create Account",
+            text = "Crie sua conta",
             color = Color.Black,
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
@@ -128,7 +128,7 @@ fun RegisterContent(onRegister: (String, String) -> Unit) {
             textAlign = TextAlign.Center
         )
         Text(
-            text = "Sign up to get started",
+            text = "Cadastre-se e começe a explorar",
             color = Color.Gray,
             fontSize = 16.sp,
             modifier = Modifier
@@ -193,7 +193,7 @@ fun RegisterEmailField(email: String, isValid: Boolean, onValueChange: (String) 
         OutlinedTextField(
             value = email,
             onValueChange = onValueChange,
-            placeholder = { Text("Email Address", color = Color.Gray) },
+            placeholder = { Text("Email", color = Color.Gray) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -209,7 +209,7 @@ fun RegisterEmailField(email: String, isValid: Boolean, onValueChange: (String) 
         )
         if (!isValid) {
             Text(
-                text = "Please enter a valid email",
+                text = "Por favor insira um email válido!",
                 color = Color.Red,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(start = 8.dp, top = 4.dp)
@@ -224,7 +224,7 @@ fun RegisterPasswordField(password: String, isValid: Boolean, onValueChange: (St
         OutlinedTextField(
             value = password,
             onValueChange = onValueChange,
-            placeholder = { Text("Password", color = Color.Gray) },
+            placeholder = { Text("Senha", color = Color.Gray) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -241,7 +241,7 @@ fun RegisterPasswordField(password: String, isValid: Boolean, onValueChange: (St
         )
         if (!isValid) {
             Text(
-                text = "Password must be 8+ chars with a capital and a number",
+                text = "A senha precisa ter 8+ caracteres, uma letra maiúscula e um número",
                 color = Color.Red,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(start = 8.dp, top = 4.dp)
@@ -256,7 +256,7 @@ fun ConfirmPasswordField(confirmPassword: String, isValid: Boolean, onValueChang
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = onValueChange,
-            placeholder = { Text("Confirm Password", color = Color.Gray) },
+            placeholder = { Text("Confirmar senha", color = Color.Gray) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -273,7 +273,7 @@ fun ConfirmPasswordField(confirmPassword: String, isValid: Boolean, onValueChang
         )
         if (!isValid) {
             Text(
-                text = "Passwords do not match",
+                text = "Insira a mesma senha anterior!",
                 color = Color.Red,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(start = 8.dp, top = 4.dp)
@@ -293,7 +293,7 @@ fun RegisterButton(onClicked: () -> Unit) {
         shape = RoundedCornerShape(50)
     ) {
         Text(
-            text = "Sign Up",
+            text = "Cadastre-se",
             color = Color.White,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold
