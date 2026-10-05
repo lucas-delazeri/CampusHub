@@ -208,7 +208,13 @@ object EventRepository {
             .addOnFailureListener { onResult(false, it.localizedMessage) }
     }
 
-    fun editComment(eventId: Int, commentId: String, newContent: String, onResult: (Boolean, String?) -> Unit) {
+    fun editComment(
+        eventId: Int,
+        commentId: String,
+        newContent: String,
+        newRating: Int?,
+        onResult: (Boolean, String?) -> Unit
+    ) {
         val user = auth.currentUser
         if (user == null) {
             onResult(false, "Usuário não autenticado")
@@ -220,8 +226,17 @@ object EventRepository {
             return
         }
 
-        val commentRef = db.child("events").child(eventId.toString()).child("comments").child(commentId)
-        commentRef.child("content").setValue(newContent.trim())
+        val commentRef = db.child("events")
+            .child(eventId.toString())
+            .child("comments")
+            .child(commentId)
+
+        val updates = mapOf<String, Any?>(
+            "content" to newContent.trim(),
+            "rating" to newRating
+        )
+
+        commentRef.updateChildren(updates)
             .addOnSuccessListener { onResult(true, "Comentário editado!") }
             .addOnFailureListener { onResult(false, it.localizedMessage) }
     }

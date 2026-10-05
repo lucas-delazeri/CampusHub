@@ -108,8 +108,8 @@ fun MainHubScreen(
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     },
-                    onEditComment = { commentId, newContent ->
-                        viewModel.editComment(selectedEvent.id, commentId, newContent) { message ->
+                    onEditComment = { commentId, newContent, newRating ->
+                        viewModel.editComment(selectedEvent.id, commentId, newContent, newRating) { message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     },

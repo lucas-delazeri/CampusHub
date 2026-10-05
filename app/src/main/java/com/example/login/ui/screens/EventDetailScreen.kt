@@ -1,6 +1,7 @@
 package com.example.login.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,7 +65,7 @@ fun EventDetailScreen(
     onToggleEnroll: () -> Unit,
     onToggleFavorite: () -> Unit,
     onAddComment: (String, Int?) -> Unit,
-    onEditComment: (String, String) -> Unit,
+    onEditComment: (String, String, Int?) -> Unit,
     onDeleteComment: (String) -> Unit,
     onRateEvent: (Int) -> Unit
 ) {
@@ -72,6 +73,7 @@ fun EventDetailScreen(
     var newCommentText by remember { mutableStateOf("") }
     var commentToEdit by remember { mutableStateOf<Comment?>(null) }
     var editText by remember { mutableStateOf("") }
+    var editRating by remember { mutableStateOf(0) }
     var commentToDelete by remember { mutableStateOf<Comment?>(null) }
 
     var averageRating by remember { mutableStateOf(0.0) }
@@ -368,6 +370,7 @@ fun EventDetailScreen(
                                             onClick = {
                                                 commentToEdit = comment
                                                 editText = comment.content
+                                                editRating = comment.rating ?: 0
                                             },
                                             modifier = Modifier.size(28.dp)
                                         ) {
@@ -433,20 +436,51 @@ fun EventDetailScreen(
             onDismissRequest = { commentToEdit = null },
             title = { Text("Editar Comentário", color = Color(0xFF4A4A4A)) },
             text = {
-                OutlinedTextField(
-                    value = editText,
-                    onValueChange = { editText = it },
-                    label = { Text("Comentário") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
-                )
+                Column {
+                    OutlinedTextField(
+                        value = editText,
+                        onValueChange = { editText = it },
+                        label = { Text("Comentário") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Nota",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF4A4A4A)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        for (i in 1..5) {
+                            Icon(
+                                imageVector = if (i <= editRating) Icons.Default.Star else Icons.Outlined.Star,
+                                contentDescription = "$i estrela(s)",
+                                tint = if (i <= editRating) Color(0xFFFFC107) else Color.LightGray,
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clickable {
+                                        editRating = if (editRating == i) 0 else i
+                                    }
+                            )
+                        }
+                    }
+                }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
                         val comment = commentToEdit
                         if (comment != null && editText.isNotBlank()) {
-                            onEditComment(comment.id, editText)
+                            onEditComment(
+                                comment.id,
+                                editText,
+                                if (editRating > 0) editRating else null
+                            )
                         }
                         commentToEdit = null
                     }

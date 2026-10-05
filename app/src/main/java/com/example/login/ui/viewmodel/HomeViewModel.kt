@@ -88,8 +88,8 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    fun editComment(eventId: Int, commentId: String, newContent: String, onResultMessage: (String) -> Unit) {
-        EventRepository.editComment(eventId, commentId, newContent) { success, message ->
+    fun editComment(eventId: Int, commentId: String, newContent: String, newRating: Int?, onResultMessage: (String) -> Unit) {
+        EventRepository.editComment(eventId, commentId, newContent, newRating) { success, message ->
             onResultMessage(message ?: if (success) "Comentário atualizado!" else "Erro ao editar")
         }
     }
