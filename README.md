@@ -9,14 +9,18 @@ CampusHub is a modern Android application designed for university students to di
     - Google Sign-In integration.
     - Password recovery via email (Forgot Password).
     - Persistent login session (Auto-redirect if already logged in).
-- **Event Management**:
-    - **Events Feed**: Browse all available university events with real-time search filtering.
-    - **Event Details**: Deep dive into event info (Date, Location, Organizer, and Description).
+- **Event Management & Interactions**:
+    - **Events Feed**: Browse all available university events with real-time search filtering and status filters (Upcoming / Ended).
+    - **Event Details**: Deep dive into event info (Date, Location, Organizer, Category, and Description).
     - **Enrollment**: One-tap registration or cancellation for any event.
-    - **My Events**: A dedicated tab to manage your active enrollments.
+    - **Favorites**: Toggle event favorites and dedicated tab filter to view only your favorite events.
+    - **My Events Tab**: Manage active enrollments and favorite events with quick actions.
+    - **Comments & Ratings**: Interactive comments section with star ratings (1-5), editing, deleting, and real-time synchronization via Firebase Realtime Database.
+- **Global Navigation & UI**:
+    - Global Material 3 `TopAppBar` with dynamic titles and persistent sign-out action across all screens.
+    - Clean bottom navigation bar for switching between Events, My Events, and Profile tabs.
 - **User Profile**:
-    - View and edit your full name.
-    - Profile picture upload to **Firebase Storage**.
+    - View and edit your full name and email.
     - Real-time profile updates across the app.
 
 ## 🛠 Tech Stack
@@ -27,6 +31,7 @@ CampusHub is a modern Android application designed for university students to di
 - **Architecture**: MVVM (Model-View-ViewModel)
 - **Backend**: 
     - [Firebase Auth](https://firebase.google.com/docs/auth) (Authentication)
+    - [Firebase Realtime Database](https://firebase.google.com/docs/database) (Events, Enrollments, Favorites, Comments & Ratings)
     - [Firebase Storage](https://firebase.google.com/docs/storage) (Image Hosting)
 - **Image Loading**: [Coil](https://coil-kt.github.io/coil/)
 - **Dependency Management**: Gradle (Kotlin DSL)
@@ -50,7 +55,7 @@ To run this project locally:
 2. **Firebase Configuration**:
     - Create a project in the [Firebase Console](https://console.firebase.google.com/).
     - Enable **Authentication** (Email/Password and Google).
-    - Enable **Cloud Storage**.
+    - Enable **Realtime Database** and **Cloud Storage**.
     - Download the `google-services.json` file and place it in the `app/` directory.
 
 3. **Build & Run**:
