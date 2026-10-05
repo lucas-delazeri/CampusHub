@@ -15,14 +15,22 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.login.data.repository.EventRepository
 import com.example.login.ui.viewmodel.HomeViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainHubScreen(
     viewModel: HomeViewModel,
@@ -32,6 +40,29 @@ fun MainHubScreen(
     val selectedEvent = viewModel.selectedEvent
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    val title = when {
+                        selectedEvent != null -> "Detalhes do Evento"
+                        viewModel.currentTab == 0 -> "CampusHub"
+                        viewModel.currentTab == 1 -> "Meus Eventos"
+                        else -> "Perfil"
+                    }
+                    Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+                },
+                actions = {
+                    IconButton(onClick = { viewModel.signOut(onNavigateToLogin) }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Sair da conta",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF22396F))
+            )
+        },
         bottomBar = {
             if (selectedEvent == null) {
                 NavigationBar(
@@ -145,9 +176,6 @@ fun MainHubScreen(
                             viewModel.updateProfile(viewModel.userName) {
                                 Toast.makeText(context, "Perfil atualizado com sucesso!", Toast.LENGTH_SHORT).show()
                             }
-                        },
-                        onSignOut = {
-                            viewModel.signOut(onNavigateToLogin)
                         }
                     )
                 }
