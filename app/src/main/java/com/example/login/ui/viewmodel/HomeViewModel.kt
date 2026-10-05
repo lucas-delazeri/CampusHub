@@ -32,6 +32,10 @@ class HomeViewModel : ViewModel() {
     }
 
     fun toggleEnrollment(event: Event, onResultMessage: (String) -> Unit) {
+        if (event.isEnded) {
+            onResultMessage("Este evento já encerrou. Ações de inscrição estão desativadas.")
+            return
+        }
         if (EventRepository.isEnrolled(event.id)) {
             EventRepository.unenroll(event.id)
             onResultMessage("Inscrição cancelada com sucesso!")

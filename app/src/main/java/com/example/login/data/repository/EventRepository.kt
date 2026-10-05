@@ -36,7 +36,8 @@ object EventRepository {
             date = "02 a 04 de Outubro, 18:00",
             location = "Laboratório de Informática Avançada",
             organizer = "Faculdade de Computação",
-            category = "Tecnologia"
+            category = "Tecnologia",
+            isEnded = true
         ),
         Event(
             id = 3,

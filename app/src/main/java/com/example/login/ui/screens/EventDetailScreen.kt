@@ -183,18 +183,21 @@ fun EventDetailScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        val canEnroll = !event.isEnded
         Button(
             onClick = onToggleEnroll,
+            enabled = canEnroll,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(54.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = if (isEnrolled) Color(0xFFDC3545) else Color(0xFF0F93FF)
+                containerColor = if (event.isEnded) Color.LightGray else if (isEnrolled) Color(0xFFDC3545) else Color(0xFF0F93FF),
+                disabledContainerColor = Color.LightGray
             )
         ) {
             Text(
-                text = if (isEnrolled) "Cancelar Inscrição" else "Inscrever-se no Evento",
+                text = if (event.isEnded) "Evento Encerrado (Inscrições Fechadas)" else if (isEnrolled) "Cancelar Inscrição" else "Inscrever-se no Evento",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
