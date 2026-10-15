@@ -18,7 +18,7 @@ object EventRepository {
     private val db = FirebaseDatabase.getInstance().reference
     private val auth = FirebaseAuth.getInstance()
 
-    val allEvents = listOf(
+    private val defaultEventsList = listOf(
         Event(
             id = 1,
             title = "II Feira de Profissões e Carreiras",
@@ -67,6 +67,28 @@ object EventRepository {
             category = "Saúde"
         )
     )
+
+    var allEvents by mutableStateOf(defaultEventsList)
+        private set
+
+    var userRole by mutableStateOf("aluno")
+        private set
+
+    fun loadUserRole() {
+        val userId = auth.currentUser?.uid ?: return
+        db.child("users").child(userId).child("role")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.exists()) {
+                    userRole = snapshot.value as? String ?: "aluno"
+                }
+            }
+    }
+
+    fun createEvent(newEvent: Event) {
+        allEvents = allEvents + newEvent
+        db.child("events").child(newEvent.id.toString()).setValue(newEvent)
+    }
 
     var enrolledEventIds by mutableStateOf(setOf<Int>())
         private set
