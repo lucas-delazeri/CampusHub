@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,19 +59,24 @@ class RegisterActivity : ComponentActivity() {
 
         setContent {
             LoginTheme {
-                RegisterScreen { email, password ->
-                    registerUser(email, password)
+                RegisterScreen { email, password, role ->
+                    registerUser(email, password, role)
                 }
             }
         }
     }
 
-    private fun registerUser(email: String, password: String) {
+    private fun registerUser(email: String, password: String, role: String) {
 
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-
+                    val userId = auth.currentUser?.uid
+                    if (userId != null) {
+                        com.google.firebase.database.FirebaseDatabase.getInstance().reference
+                            .child("users").child(userId).child("role")
+                            .setValue(role)
+                    }
                     val intent = Intent(this, HomeActivity::class.java)
                     startActivity(intent)
                     finish()
@@ -82,7 +88,7 @@ class RegisterActivity : ComponentActivity() {
 }
 
 @Composable
-fun RegisterScreen(onRegister: (String, String) -> Unit) {
+fun RegisterScreen(onRegister: (String, String, String) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -93,11 +99,12 @@ fun RegisterScreen(onRegister: (String, String) -> Unit) {
 }
 
 @Composable
-fun RegisterContent(onRegister: (String, String) -> Unit) {
+fun RegisterContent(onRegister: (String, String, String) -> Unit) {
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var selectedRole by remember { mutableStateOf("aluno") }
     var validEmail by remember { mutableStateOf(true) }
     var validPassword by remember { mutableStateOf(true) }
     var passwordsMatch by remember { mutableStateOf(true) }
@@ -169,7 +176,58 @@ fun RegisterContent(onRegister: (String, String) -> Unit) {
             }
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Tipo de Conta",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(
+                onClick = { selectedRole = "aluno" },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (selectedRole == "aluno") Color(0xFF0F93FF) else Color(0xFFE2E8F0)
+                )
+            ) {
+                Text(
+                    text = "Aluno",
+                    color = if (selectedRole == "aluno") Color.White else Color.DarkGray,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Button(
+                onClick = { selectedRole = "professor" },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (selectedRole == "professor") Color(0xFF0F93FF) else Color(0xFFE2E8F0)
+                )
+            ) {
+                Text(
+                    text = "Professor",
+                    color = if (selectedRole == "professor") Color.White else Color.DarkGray,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         RegisterButton {
             val emailOk = isValidEmail(email)
@@ -181,7 +239,7 @@ fun RegisterContent(onRegister: (String, String) -> Unit) {
             passwordsMatch = matchOk
 
             if (emailOk && passOk && matchOk) {
-                onRegister(email, password)
+                onRegister(email, password, selectedRole)
             }
         }
     }
@@ -319,6 +377,6 @@ fun isValidPassword(password: String): Boolean {
 @Composable
 fun RegisterScreenPreview() {
     LoginTheme {
-        RegisterScreen { _, _ -> }
+        RegisterScreen { _, _, _ -> }
     }
 }
