@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -18,6 +20,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localProperties.load(localPropertiesFile.inputStream())
+        }
+        val cartoKey = localProperties.getProperty("CARTO_API_KEY") ?: ""
+        buildConfigField("String", "CARTO_API_KEY", "\"$cartoKey\"")
     }
 
     buildTypes {
@@ -35,16 +45,20 @@ android {
 
     buildFeatures {
         compose = true
+        viewBinding = true
+        buildConfig = true
     }
 }
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
@@ -52,6 +66,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx:23.2.1")
     implementation("com.google.firebase:firebase-database-ktx:21.0.0")
     implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
 
     testImplementation(libs.junit)
 
