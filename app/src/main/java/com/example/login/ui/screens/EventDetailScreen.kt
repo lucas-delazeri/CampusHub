@@ -51,7 +51,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.login.data.model.Comment
 import com.example.login.data.model.Event
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import com.example.login.data.repository.EventRepository
+import com.example.login.ui.components.MapsActivity
 import com.example.login.ui.components.EventRatingSummaryCard
 import com.example.login.ui.components.StudentEventRatingCard
 
@@ -68,6 +71,7 @@ fun EventDetailScreen(
     onRateEvent: (Int) -> Unit,
     onBack: () -> Unit,
 ) {
+    val context = LocalContext.current
     var comments by remember { mutableStateOf<List<Comment>>(emptyList()) }
     var newCommentText by remember { mutableStateOf("") }
     var commentToEdit by remember { mutableStateOf<Comment?>(null) }
@@ -139,7 +143,15 @@ fun EventDetailScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    val intent = Intent(context, MapsActivity::class.java).apply {
+                        putExtra("event_title", event.title)
+                        putExtra("event_location", event.location)
+                    }
+                    context.startActivity(intent)
+                },
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
@@ -150,10 +162,53 @@ fun EventDetailScreen(
                     Text(text = event.date, fontSize = 15.sp, color = Color.Black, fontWeight = FontWeight.Medium)
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color(0xFF0F93FF))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(text = event.location, fontSize = 15.sp, color = Color.Black, fontWeight = FontWeight.Medium)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color(0xFF0F93FF))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(text = event.location, fontSize = 15.sp, color = Color.Black, fontWeight = FontWeight.Medium)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(130.dp)
+                        .background(Color(0xFFE2E8F0), RoundedCornerShape(8.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = Color(0xFF0F93FF),
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = event.location,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF334155)
+                        )
+                        Text(
+                            text = "Toque para abrir o mapa",
+                            fontSize = 11.sp,
+                            color = Color(0xFF64748B)
+                        )
+                    }
                 }
             }
         }
