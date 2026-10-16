@@ -38,7 +38,6 @@
         <activity
             android:name=".ui.components.MapsActivity"
             android:exported="false"
-            android:label="@string/title_activity_maps"
             android:theme="@style/Theme.AppCompat.Light.DarkActionBar"
             android:windowSoftInputMode="adjustResize" />
     </application>
