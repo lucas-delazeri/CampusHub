@@ -12,10 +12,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -36,7 +38,11 @@ import com.example.login.data.repository.EventRepository
 import com.example.login.ui.components.EventCard
 
 @Composable
-fun EventsListTab(onEventClick: (Event) -> Unit) {
+fun EventsListTab(
+    onEventClick: (Event) -> Unit,
+    isTeacher: Boolean = false,
+    onOpenCreateScreen: () -> Unit = {}
+) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("todos") }
     val filteredEvents = EventRepository.allEvents.filter { event ->
@@ -54,34 +60,35 @@ fun EventsListTab(onEventClick: (Event) -> Unit) {
         matchesSearch && matchesFilter
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text("Pesquisar eventos, categorias...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Close, contentDescription = "Limpar")
-                    }
-                }
-            },
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                focusedBorderColor = Color(0xFF0F93FF)
-            ),
-            singleLine = true
-        )
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Pesquisar eventos, categorias...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(Icons.Default.Close, contentDescription = "Limpar")
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = Color(0xFF0F93FF)
+                ),
+                singleLine = true
+            )
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -135,20 +142,34 @@ fun EventsListTab(onEventClick: (Event) -> Unit) {
             }
         }
 
-        if (filteredEvents.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Nenhum evento encontrado.", color = Color.Gray, fontSize = 16.sp)
-            }
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(filteredEvents) { event ->
-                    EventCard(event = event, onClick = { onEventClick(event) })
+            if (filteredEvents.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Nenhum evento encontrado.", color = Color.Gray, fontSize = 16.sp)
                 }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(filteredEvents) { event ->
+                        EventCard(event = event, onClick = { onEventClick(event) })
+                    }
+                }
+            }
+        }
+
+        if (isTeacher) {
+            FloatingActionButton(
+                onClick = onOpenCreateScreen,
+                containerColor = Color(0xFF0F93FF),
+                contentColor = Color.White,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Criar Evento")
             }
         }
     }
