@@ -163,17 +163,6 @@ class MapsActivity : AppCompatActivity() {
         }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        val map = binding.map
-        return when (item.itemId) {
-            R.id.normal_map -> {
-                map.setTileSource(cartoVoyager)
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
     override fun onResume() {
         super.onResume()
         binding.map.onResume()

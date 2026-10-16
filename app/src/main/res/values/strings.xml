@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">CampusHub</string>
     <string name="title_activity_home">CampusHub - Home</string>
-    <string name="title_activity_maps">MapsActivity</string>
     <string name="normal_map">Mapa Normal</string>
     <string name="wikimedia_map">Mapa Wikimedia</string>
     <string name="topo_map">Mapa Topográfico</string>
+    <string name="confirm_location">Confirmar Localização</string>
 </resources>
