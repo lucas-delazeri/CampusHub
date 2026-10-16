@@ -83,27 +83,6 @@ fun CreateEventScreen(
             .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 20.dp)
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Voltar",
-                    tint = Color(0xFF0F93FF)
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Cadastrar Novo Evento",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1E293B)
-            )
-        }
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
