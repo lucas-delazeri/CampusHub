@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 fun ProfileTab(
     name: String,
     email: String,
+    userRole: String = "aluno",
     onNameChange: (String) -> Unit,
     onSaveProfile: () -> Unit
 ) {
@@ -52,6 +53,24 @@ fun ProfileTab(
                 contentDescription = null,
                 tint = Color(0xFF0F93FF),
                 modifier = Modifier.size(48.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Box(
+            modifier = Modifier
+                .background(
+                    if (userRole.equals("professor", ignoreCase = true)) Color(0xFFE6F4FF) else Color(0xFFF1F5F9),
+                    RoundedCornerShape(16.dp)
+                )
+                .padding(horizontal = 16.dp, vertical = 6.dp)
+        ) {
+            Text(
+                text = if (userRole.equals("professor", ignoreCase = true)) "Professor" else "Aluno",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (userRole.equals("professor", ignoreCase = true)) Color(0xFF0F93FF) else Color(0xFF475569)
             )
         }
 
