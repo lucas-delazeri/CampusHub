@@ -15,12 +15,55 @@ class HomeViewModel : ViewModel() {
 
     var currentTab by mutableStateOf(0)
     var selectedEvent by mutableStateOf<Event?>(null)
+    var isCreatingEvent by mutableStateOf(false)
     var userName by mutableStateOf(auth.currentUser?.displayName ?: "Estudante")
     val email: String = auth.currentUser?.email ?: "No email"
 
     init {
         EventRepository.loadUserEnrollments()
         EventRepository.loadUserFavoriteEvents()
+        EventRepository.loadUserRole()
+    }
+
+    val userRole: String
+        get() = EventRepository.userRole
+
+    val isTeacher: Boolean
+        get() = userRole.equals("professor", ignoreCase = true)
+
+    fun createEvent(
+        title: String,
+        description: String,
+        date: String,
+        location: String,
+        category: String,
+        lat: Double? = null,
+        lng: Double? = null,
+        onResultMessage: (String) -> Unit
+    ) {
+        if (!isTeacher) {
+            onResultMessage("Apenas professores podem criar eventos.")
+            return
+        }
+        if (title.isBlank() || description.isBlank() || date.isBlank() || location.isBlank()) {
+            onResultMessage("Preencha todos os campos obrigatórios.")
+            return
+        }
+        val newId = (EventRepository.allEvents.maxOfOrNull { it.id } ?: 0) + 1
+        val newEvent = Event(
+            id = newId,
+            title = title,
+            description = description,
+            date = date,
+            location = location,
+            organizer = userName,
+            category = if (category.isBlank()) "Geral" else category,
+            isEnded = false,
+            latitude = lat ?: -23.550520,
+            longitude = lng ?: -46.633308
+        )
+        EventRepository.createEvent(newEvent)
+        onResultMessage("Evento criado com sucesso!")
     }
 
     fun changeTab(tabIndex: Int) {

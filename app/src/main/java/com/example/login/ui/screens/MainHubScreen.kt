@@ -44,8 +44,14 @@ fun MainHubScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    if (selectedEvent != null) {
-                        IconButton(onClick = { viewModel.selectedEvent = null }) {
+                    if (selectedEvent != null || viewModel.isCreatingEvent) {
+                        IconButton(onClick = {
+                            if (selectedEvent != null) {
+                                viewModel.selectedEvent = null
+                            } else {
+                                viewModel.isCreatingEvent = false
+                            }
+                        }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Voltar",
@@ -57,6 +63,7 @@ fun MainHubScreen(
                 title = {
                     val title = when {
                         selectedEvent != null -> "Detalhes do Evento"
+                        viewModel.isCreatingEvent -> "Novo Evento"
                         viewModel.currentTab == 0 -> "CampusHub"
                         viewModel.currentTab == 1 -> "Meus Eventos"
                         else -> "Perfil"
@@ -88,7 +95,7 @@ fun MainHubScreen(
             )
         },
         bottomBar = {
-            if (selectedEvent == null) {
+            if (selectedEvent == null && !viewModel.isCreatingEvent) {
                 NavigationBar(
                     containerColor = Color.White,
                     tonalElevation = 8.dp
@@ -179,9 +186,25 @@ fun MainHubScreen(
                         }
                     }
                 )
+            } else if (viewModel.isCreatingEvent) {
+                CreateEventScreen(
+                    onBack = { viewModel.isCreatingEvent = false },
+                    onCreateEvent = { title, description, date, location, category, lat, lng ->
+                        viewModel.createEvent(title, description, date, location, category, lat, lng) { message ->
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            if (message.contains("sucesso", ignoreCase = true)) {
+                                viewModel.isCreatingEvent = false
+                            }
+                        }
+                    }
+                )
             } else {
                 when (viewModel.currentTab) {
-                    0 -> EventsListTab(onEventClick = { viewModel.selectedEvent = it })
+                    0 -> EventsListTab(
+                        onEventClick = { viewModel.selectedEvent = it },
+                        isTeacher = viewModel.isTeacher,
+                        onOpenCreateScreen = { viewModel.isCreatingEvent = true }
+                    )
                     1 -> MyEventsTab(
                         onEventClick = { viewModel.selectedEvent = it },
                         onUnenroll = { id ->
@@ -195,6 +218,7 @@ fun MainHubScreen(
                     2 -> ProfileTab(
                         name = viewModel.userName,
                         email = viewModel.email,
+                        userRole = viewModel.userRole,
                         onNameChange = { viewModel.userName = it },
                         onSaveProfile = {
                             viewModel.updateProfile(viewModel.userName) {
