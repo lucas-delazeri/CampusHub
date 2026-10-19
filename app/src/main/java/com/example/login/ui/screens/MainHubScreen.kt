@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.login.data.imgUtils.ImageUtils
 import com.example.login.data.repository.EventRepository
 import com.example.login.ui.viewmodel.HomeViewModel
 
@@ -165,8 +166,9 @@ fun MainHubScreen(
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     },
-                    onAddComment = { content, rating ->
-                        viewModel.addComment(selectedEvent.id, content, rating) { message ->
+                    onAddComment = { content, rating, photoUri ->
+                        val imageBase64 = photoUri?.let { ImageUtils.uriToBase64(context, it) }
+                        viewModel.addComment(selectedEvent.id, content, rating, imageBase64) { message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     },
