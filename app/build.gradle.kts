@@ -68,6 +68,8 @@ dependencies {
     implementation("com.google.firebase:firebase-database-ktx:21.0.0")
     implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation("org.osmdroid:osmdroid-android:6.1.18")
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("com.google.firebase:firebase-storage:21.0.1")
 
     testImplementation(libs.junit)
 
