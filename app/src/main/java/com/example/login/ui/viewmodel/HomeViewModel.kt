@@ -125,20 +125,34 @@ class HomeViewModel : ViewModel() {
     val currentUserId: String?
         get() = auth.currentUser?.uid
 
+    // Atualizado para aceitar audioUri (convertido para String)
     fun addComment(
         eventId: Int,
         content: String,
         rating: Int?,
         imageBase64: String?,
+        audioUri: Uri?,
         onMessage: (String) -> Unit
     ) {
-        EventRepository.addComment(eventId, content, rating, imageBase64) { success, message ->
+        val audioPath = audioUri?.toString()
+        // Se o seu EventRepository.addComment ainda não aceitar o audioPath,
+        // certifique-se de adicioná-lo na assinatura do repositório também.
+        EventRepository.addComment(eventId, content, rating, imageBase64, audioPath) { success, message ->
             onMessage(message ?: if (success) "Comentário adicionado!" else "Erro ao adicionar comentário")
         }
     }
 
-    fun editComment(eventId: Int, commentId: String, newContent: String, newRating: Int?, onResultMessage: (String) -> Unit) {
-        EventRepository.editComment(eventId, commentId, newContent, newRating) { success, message ->
+    // Atualizado para aceitar audioUri na edição
+    fun editComment(
+        eventId: Int,
+        commentId: String,
+        newContent: String,
+        newRating: Int?,
+        newAudioUri: Uri?,
+        onResultMessage: (String) -> Unit
+    ) {
+        val audioPath = newAudioUri?.toString()
+        EventRepository.editComment(eventId, commentId, newContent, newRating, audioPath) { success, message ->
             onResultMessage(message ?: if (success) "Comentário atualizado!" else "Erro ao editar")
         }
     }

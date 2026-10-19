@@ -1,7 +1,9 @@
 package com.example.login
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -55,6 +57,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import com.example.login.ui.theme.LoginTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -65,6 +68,8 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import java.util.regex.Pattern
+
+const val REQUEST_CODE = 200
 
 class MainActivity : ComponentActivity() {
 
@@ -80,10 +85,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val permissions = arrayOf(Manifest.permission.RECORD_AUDIO)
+    private var permissionGranted = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
+
+        permissionGranted = ActivityCompat.checkSelfPermission(this, permissions[0]) == PackageManager.PERMISSION_GRANTED
+
+        if (!permissionGranted) {
+            ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE)
+        }
 
         auth = FirebaseAuth.getInstance()
 
@@ -115,6 +129,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == REQUEST_CODE) {
+            if (grantResults.isNotEmpty()) {
+                permissionGranted = grantResults[0] == PackageManager.PERMISSION_GRANTED
+            }
+        }
+    }
+
     private fun resetPassword(email: String) {
         if (email.isBlank() || !validEmail(email)) {
             Toast.makeText(this, "Por favor, digite seu e-mail no campo acima primeiro.", Toast.LENGTH_LONG).show()
@@ -131,11 +159,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun login(email: String, password: String) {
-
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-
                     val intent = Intent(this, HomeActivity::class.java)
                     startActivity(intent)
                     finish()
@@ -152,8 +178,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private val launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            result ->
+    private val launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
             handleResults(task)
@@ -176,10 +201,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun updateUI(account: GoogleSignInAccount) {
-        val credenctial = GoogleAuthProvider.getCredential(account.idToken, null)
-        auth.signInWithCredential(credenctial).addOnCompleteListener {
+        val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+        auth.signInWithCredential(credential).addOnCompleteListener {
             if (it.isSuccessful) {
-                val intent: Intent = Intent(this, HomeActivity::class.java)
+                val intent = Intent(this, HomeActivity::class.java)
                 intent.putExtra("email", account.email)
                 intent.putExtra("name", account.displayName)
                 startActivity(intent)
@@ -214,11 +239,10 @@ fun LoginContent(
     onGoogleSignIn: () -> Unit,
     onForgotPassword: (String) -> Unit
 ) {
-
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var validEmail by remember { mutableStateOf(true) }
-    var validPassword by remember { mutableStateOf(true) }
+    var validEmailState by remember { mutableStateOf(true) }
+    var validPasswordState by remember { mutableStateOf(true) }
 
     Column(
         modifier = Modifier
@@ -257,12 +281,12 @@ fun LoginContent(
 
         EmailField(email) {
             email = it
-            validEmail = validEmail(it)
+            validEmailState = validEmail(it)
         }
         Spacer(modifier = Modifier.height(8.dp))
         PasswordField(password) {
             password = it
-            validPassword = validPass(it)
+            validPasswordState = validPass(it)
         }
 
         Text(
@@ -281,8 +305,8 @@ fun LoginContent(
             if (validEmail(email) && validPass(password)) {
                 onLogin(email, password)
             } else {
-                validEmail = validEmail(email)
-                validPassword = validPass(password)
+                validEmailState = validEmail(email)
+                validPasswordState = validPass(password)
             }
         }
 
@@ -459,6 +483,7 @@ fun LoginButton(onClicked: () -> Unit) {
         )
     }
 }
+
 fun validEmail(email: String): Boolean {
     val emailTemplate = "^[a-zA-Z0-9.!#\$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)*\$"
     val template = Pattern.compile(emailTemplate)

@@ -1,7 +1,11 @@
 package com.example.login.ui.screens
 
 import android.content.Intent
+import android.media.MediaPlayer
+import android.media.MediaRecorder
 import android.net.Uri
+import android.os.Build
+import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -30,8 +34,12 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -53,7 +61,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -71,7 +78,60 @@ import com.example.login.ui.components.EventRatingSummaryCard
 import com.example.login.ui.components.MapsActivity
 import com.example.login.ui.components.StudentEventRatingCard
 import java.io.File
+import java.io.FileOutputStream
 import android.util.Base64
+import androidx.compose.ui.Alignment
+
+// --- Utilitários de Gravação e Reprodução de Áudio ---
+class AndroidAudioRecorder(private val context: Context) {
+    private var recorder: MediaRecorder? = null
+
+    private fun createRecorder(): MediaRecorder {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            MediaRecorder(context)
+        } else {
+            @Suppress("DEPRECATION")
+            MediaRecorder()
+        }
+    }
+
+    fun start(outputFile: File) {
+        createRecorder().apply {
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setOutputFile(FileOutputStream(outputFile).fd)
+            prepare()
+            start()
+            recorder = this
+        }
+    }
+
+    fun stop() {
+        recorder?.stop()
+        recorder?.reset()
+        recorder = null
+    }
+}
+
+class AndroidAudioPlayer(private val context: Context) {
+    private var player: MediaPlayer? = null
+
+    fun playFile(uri: Uri, onCompletion: () -> Unit = {}) {
+        player?.stop()
+        player?.release()
+        player = MediaPlayer.create(context, uri)?.apply {
+            setOnCompletionListener { onCompletion() }
+            start()
+        }
+    }
+
+    fun stop() {
+        player?.stop()
+        player?.release()
+        player = null
+    }
+}
 
 @Composable
 fun EventDetailScreen(
@@ -80,8 +140,8 @@ fun EventDetailScreen(
     currentUserId: String?,
     onToggleEnroll: () -> Unit,
     onToggleFavorite: () -> Unit,
-    onAddComment: (String, Int?, Uri?) -> Unit,
-    onEditComment: (String, String, Int?) -> Unit,
+    onAddComment: (String, Int?, Uri?, Uri?) -> Unit,
+    onEditComment: (String, String, Int?, Uri?) -> Unit,
     onDeleteComment: (String) -> Unit,
     onRateEvent: (Int) -> Unit,
     onBack: () -> Unit,
@@ -92,6 +152,7 @@ fun EventDetailScreen(
     var commentToEdit by remember { mutableStateOf<Comment?>(null) }
     var editText by remember { mutableStateOf("") }
     var editRating by remember { mutableIntStateOf(0) }
+    var editAudioUri by remember { mutableStateOf<Uri?>(null) }
     var commentToDelete by remember { mutableStateOf<Comment?>(null) }
 
     var averageRating by remember { mutableDoubleStateOf(0.0) }
@@ -350,6 +411,14 @@ fun EventDetailScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (currentUserId != null) {
+            val audioRecorder = remember { AndroidAudioRecorder(context) }
+            val audioPlayer = remember { AndroidAudioPlayer(context) }
+
+            var isRecording by rememberSaveable { mutableStateOf(false) }
+            var audioFile by rememberSaveable { mutableStateOf<File?>(null) }
+            var audioUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+            var isPlayingAudio by rememberSaveable { mutableStateOf(false) }
+
             Column(modifier = Modifier.fillMaxWidth()) {
                 photoUri?.let { uri ->
                     Box(modifier = Modifier.padding(bottom = 8.dp)) {
@@ -380,6 +449,61 @@ fun EventDetailScreen(
                     }
                 }
 
+                // Preview do Áudio Gravado antes de enviar
+                audioUri?.let { uri ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
+                            .background(Color(0xFFE6F4FF), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = {
+                                    if (isPlayingAudio) {
+                                        audioPlayer.stop()
+                                        isPlayingAudio = false
+                                    } else {
+                                        isPlayingAudio = true
+                                        audioPlayer.playFile(uri) {
+                                            isPlayingAudio = false
+                                        }
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (isPlayingAudio) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                    contentDescription = "Ouvir áudio",
+                                    tint = Color(0xFF0F93FF)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Áudio gravado",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF0F93FF)
+                            )
+                        }
+                        IconButton(onClick = {
+                            audioPlayer.stop()
+                            isPlayingAudio = false
+                            audioUri = null
+                            audioFile?.delete()
+                            audioFile = null
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Remover áudio",
+                                tint = Color.Gray
+                            )
+                        }
+                    }
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -387,34 +511,68 @@ fun EventDetailScreen(
                     OutlinedTextField(
                         value = newCommentText,
                         onValueChange = { newCommentText = it },
-                        placeholder = { Text("Escreva um comentário...") },
+                        placeholder = {
+                            Text(if (isRecording) "Gravando áudio..." else "Escreva um comentário...")
+                        },
+                        enabled = !isRecording,
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = Color.White,
                             unfocusedContainerColor = Color.White,
                             focusedBorderColor = Color(0xFF0F93FF)
                         ),
-                        maxLines = 3
+                        maxLines = 3,
+                        trailingIcon = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { launchCamera() }) {
+                                    Icon(
+                                        imageVector = Icons.Default.CameraAlt,
+                                        contentDescription = "Adicionar foto",
+                                        tint = Color(0xFF0F93FF)
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        if (isRecording) {
+                                            audioRecorder.stop()
+                                            isRecording = false
+                                        } else {
+                                            val file = File(context.cacheDir, "audio_${System.currentTimeMillis()}.m4a")
+                                            audioFile = file
+                                            audioUri = Uri.fromFile(file)
+                                            audioRecorder.start(file)
+                                            isRecording = true
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = if (isRecording) Icons.Default.Stop else Icons.Default.Mic,
+                                        contentDescription = if (isRecording) "Parar gravação" else "Gravar áudio",
+                                        tint = if (isRecording) Color.Red else Color(0xFF0F93FF)
+                                    )
+                                }
+                            }
+                        }
                     )
-                    IconButton(onClick = { launchCamera() }) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Adicionar foto",
-                            tint = Color(0xFF0F93FF)
-                        )
-                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    val hasContent = newCommentText.isNotBlank() || photoUri != null || audioUri != null
+
                     IconButton(
                         onClick = {
-                            if (newCommentText.isNotBlank()) {
-                                onAddComment(newCommentText, userRating, photoUri)
+                            if (hasContent) {
+                                onAddComment(newCommentText, userRating, photoUri, audioUri)
                                 newCommentText = ""
                                 photoUri = null
+                                audioUri = null
+                                audioFile = null
                             }
                         },
                         modifier = Modifier
                             .background(Color(0xFF0F93FF), RoundedCornerShape(12.dp))
-                            .size(50.dp)
+                            .size(48.dp)
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
@@ -486,6 +644,7 @@ fun EventDetailScreen(
                                                 commentToEdit = comment
                                                 editText = comment.content
                                                 editRating = comment.rating ?: 0
+                                                editAudioUri = comment.audioUri?.let { Uri.parse(it) }
                                             },
                                             modifier = Modifier.size(28.dp)
                                         ) {
@@ -513,11 +672,13 @@ fun EventDetailScreen(
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            Text(
-                                text = comment.content,
-                                fontSize = 14.sp,
-                                color = Color.DarkGray
-                            )
+                            if (comment.content.isNotBlank()) {
+                                Text(
+                                    text = comment.content,
+                                    fontSize = 14.sp,
+                                    color = Color.DarkGray
+                                )
+                            }
 
                             comment.imageBase64?.let { b64 ->
                                 val bytes = remember(b64) { Base64.decode(b64, Base64.DEFAULT) }
@@ -531,6 +692,51 @@ fun EventDetailScreen(
                                         .clip(RoundedCornerShape(8.dp)),
                                     contentScale = ContentScale.Crop
                                 )
+                            }
+
+                            comment.audioUri?.let { audioPath ->
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                var isPlayingCommentAudio by remember { mutableStateOf(false) }
+                                val commentAudioPlayer = remember { AndroidAudioPlayer(context) }
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color(0xFFE6F4FF), RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        IconButton(
+                                            onClick = {
+                                                if (isPlayingCommentAudio) {
+                                                    commentAudioPlayer.stop()
+                                                    isPlayingCommentAudio = false
+                                                } else {
+                                                    isPlayingCommentAudio = true
+                                                    commentAudioPlayer.playFile(Uri.parse(audioPath)) {
+                                                        isPlayingCommentAudio = false
+                                                    }
+                                                }
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isPlayingCommentAudio) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                                contentDescription = "Ouvir áudio",
+                                                tint = Color(0xFF0F93FF)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "Áudio do comentário",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF0F93FF)
+                                        )
+                                    }
+                                }
                             }
 
                             comment.rating?.let { rating ->
@@ -559,6 +765,7 @@ fun EventDetailScreen(
         }
     }
 
+    // Modal de Edição (Com opção de apagar o áudio)
     if (commentToEdit != null) {
         AlertDialog(
             containerColor = Color.White,
@@ -573,6 +780,33 @@ fun EventDetailScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp)
                     )
+
+                    editAudioUri?.let { uri ->
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFE6F4FF), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Áudio anexado",
+                                fontSize = 13.sp,
+                                color = Color(0xFF0F93FF),
+                                fontWeight = FontWeight.Medium
+                            )
+                            IconButton(onClick = { editAudioUri = null }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Remover áudio",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -608,7 +842,8 @@ fun EventDetailScreen(
                             onEditComment(
                                 comment.id,
                                 editText,
-                                if (editRating > 0) editRating else null
+                                if (editRating > 0) editRating else null,
+                                editAudioUri
                             )
                         }
                         commentToEdit = null
