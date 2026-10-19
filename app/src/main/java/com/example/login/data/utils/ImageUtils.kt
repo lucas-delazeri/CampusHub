@@ -1,4 +1,4 @@
-package com.example.login.data.imgUtils
+package com.example.login.data.utils
 
 import android.content.Context
 import android.graphics.Bitmap
