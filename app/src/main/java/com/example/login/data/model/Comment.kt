@@ -8,5 +8,6 @@ data class Comment(
     val content: String = "",
     val publishedAt: String = "",
     val rating: Int? = null,
+    val audioUri: String? = null,
     val imageBase64: String? = null
 )

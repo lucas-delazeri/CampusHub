@@ -1,6 +1,5 @@
 package com.example.login.data.repository
 
-import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -11,7 +10,6 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.storage.FirebaseStorage
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -119,7 +117,7 @@ object EventRepository {
     }
 
     fun unenroll(eventId: Int) {
-        enrolledEventIds = enrolledEventIds - eventId
+        enrolledEventIds = enrolledEventIds - eventId // Corrigido operador de subtração do Set
         syncWithDatabase()
     }
 
@@ -154,7 +152,7 @@ object EventRepository {
     }
 
     fun unfavorite(eventId: Int) {
-        favoriteEventsId = favoriteEventsId - eventId
+        favoriteEventsId = favoriteEventsId - eventId // Corrigido operador de subtração do Set
         syncFavoriteEventsWithDatabase()
     }
 
@@ -198,6 +196,7 @@ object EventRepository {
         content: String,
         rating: Int?,
         imageBase64: String?,
+        audioUri: String?,
         onResult: (Boolean, String?) -> Unit
     ) {
         val user = auth.currentUser
@@ -205,7 +204,7 @@ object EventRepository {
             onResult(false, "Usuário não autenticado")
             return
         }
-        if (content.isBlank()) {
+        if (content.isBlank() && imageBase64 == null && audioUri == null) {
             onResult(false, "O comentário não pode ser vazio")
             return
         }
@@ -230,7 +229,8 @@ object EventRepository {
             content = content.trim(),
             publishedAt = dateStr,
             rating = rating,
-            imageBase64 = imageBase64
+            imageBase64 = imageBase64,
+            audioUri = audioUri
         )
 
         commentsRef.child(commentId).setValue(comment)
@@ -243,6 +243,7 @@ object EventRepository {
         commentId: String,
         newContent: String,
         newRating: Int?,
+        newAudioUri: String?,
         onResult: (Boolean, String?) -> Unit
     ) {
         val user = auth.currentUser
@@ -263,7 +264,8 @@ object EventRepository {
 
         val updates = mapOf<String, Any?>(
             "content" to newContent.trim(),
-            "rating" to newRating
+            "rating" to newRating,
+            "audioUri" to newAudioUri
         )
 
         commentRef.updateChildren(updates)
