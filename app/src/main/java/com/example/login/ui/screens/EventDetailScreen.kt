@@ -52,11 +52,20 @@ import androidx.compose.ui.unit.sp
 import com.example.login.data.model.Comment
 import com.example.login.data.model.Event
 import android.content.Intent
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.FileProvider
 import com.example.login.data.repository.EventRepository
 import com.example.login.ui.components.MapsActivity
 import com.example.login.ui.components.EventRatingSummaryCard
 import com.example.login.ui.components.StudentEventRatingCard
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import java.io.File
 
 @Composable
 fun EventDetailScreen(
@@ -101,6 +110,31 @@ fun EventDetailScreen(
         onDispose {
             EventRepository.removeRatingsListener(event.id, ratingsListener)
         }
+    }
+
+    var photoUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            // photoUri já contém a foto tirada.
+            // Aqui você pode mostrar a prévia ou enviar ao Firebase Storage.
+        } else {
+            photoUri = null
+        }
+    }
+
+    fun launchCamera() {
+        val dir = File(context.cacheDir, "images").apply { mkdirs() }
+        val file = File(dir, "EventImg${System.currentTimeMillis()}.jpg")
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        photoUri = uri
+        takePictureLauncher.launch(uri)
     }
 
     Column(
@@ -429,6 +463,17 @@ fun EventDetailScreen(
                                                 imageVector = Icons.Default.Delete,
                                                 contentDescription = "Excluir",
                                                 tint = Color(0xFFDC3545),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                        IconButton(
+                                            onClick = { launchCamera() },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.CameraAlt,
+                                                contentDescription = "Adicionar foto",
+                                                tint = Color(0xFF0F93FF),
                                                 modifier = Modifier.size(18.dp)
                                             )
                                         }
