@@ -184,6 +184,8 @@ fun EventDetailScreen(
                     val intent = Intent(context, MapsActivity::class.java).apply {
                         putExtra("event_title", event.title)
                         putExtra("event_location", event.location)
+                        putExtra("event_lat", event.latitude ?: -23.550520)
+                        putExtra("event_lng", event.longitude ?: -46.633308)
                     }
                     context.startActivity(intent)
                 },
