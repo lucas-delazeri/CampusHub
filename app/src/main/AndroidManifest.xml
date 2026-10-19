@@ -24,6 +24,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true"
+            android:authorities="com.example.login">
+            <meta-data
+                android:name="android:support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider"/>
+        </provider>
+
         <activity
             android:name=".HomeActivity"
             android:exported="false"
