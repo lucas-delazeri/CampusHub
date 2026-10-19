@@ -1,5 +1,6 @@
 package com.example.login.data.repository
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,6 +11,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.firebase.storage.FirebaseStorage
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -191,13 +193,18 @@ object EventRepository {
         db.child("events").child(eventId.toString()).child("comments").removeEventListener(listener)
     }
 
-    fun addComment(eventId: Int, content: String, rating: Int? = null, onResult: (Boolean, String?) -> Unit) {
+    fun addComment(
+        eventId: Int,
+        content: String,
+        rating: Int?,
+        imageBase64: String?,
+        onResult: (Boolean, String?) -> Unit
+    ) {
         val user = auth.currentUser
         if (user == null) {
             onResult(false, "Usuário não autenticado")
             return
         }
-
         if (content.isBlank()) {
             onResult(false, "O comentário não pode ser vazio")
             return
@@ -213,8 +220,7 @@ object EventRepository {
             ?: user.email?.substringBefore("@")
             ?: "Estudante"
 
-        val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-        val dateStr = dateFormat.format(Date())
+        val dateStr = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
 
         val comment = Comment(
             id = commentId,
@@ -223,7 +229,8 @@ object EventRepository {
             authorName = authorName,
             content = content.trim(),
             publishedAt = dateStr,
-            rating = rating
+            rating = rating,
+            imageBase64 = imageBase64
         )
 
         commentsRef.child(commentId).setValue(comment)

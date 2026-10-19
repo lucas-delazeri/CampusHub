@@ -1,5 +1,6 @@
 package com.example.login.ui.viewmodel
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -128,10 +129,11 @@ class HomeViewModel : ViewModel() {
         eventId: Int,
         content: String,
         rating: Int?,
-        onResultMessage: (String) -> Unit
+        imageBase64: String?,
+        onMessage: (String) -> Unit
     ) {
-        EventRepository.addComment(eventId, content, rating) { success, message ->
-            onResultMessage(message ?: if (success) "Comentário adicionado!" else "Erro ao adicionar comentário")
+        EventRepository.addComment(eventId, content, rating, imageBase64) { success, message ->
+            onMessage(message ?: if (success) "Comentário adicionado!" else "Erro ao adicionar comentário")
         }
     }
 
