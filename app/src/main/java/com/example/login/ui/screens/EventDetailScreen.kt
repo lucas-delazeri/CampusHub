@@ -80,6 +80,9 @@ import com.example.login.ui.components.StudentEventRatingCard
 import java.io.File
 import java.io.FileOutputStream
 import android.util.Base64
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.ui.Alignment
 
 // --- Utilitários de Gravação e Reprodução de Áudio ---
@@ -165,6 +168,12 @@ fun EventDetailScreen(
         ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) photoUri = tempUri
+    }
+
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) photoUri = uri
     }
 
     fun launchCamera() {
@@ -525,13 +534,37 @@ fun EventDetailScreen(
                         maxLines = 3,
                         trailingIcon = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = { launchCamera() }) {
-                                    Icon(
-                                        imageVector = Icons.Default.CameraAlt,
-                                        contentDescription = "Adicionar foto",
-                                        tint = Color(0xFF0F93FF)
-                                    )
+                                Box {
+                                    var expanded by remember { mutableStateOf(false) }
+
+                                    IconButton(onClick = { expanded = !expanded }) {
+                                        Icon(
+                                            imageVector = Icons.Default.CameraAlt,
+                                            contentDescription = "Adicionar foto",
+                                            tint = Color(0xFF0F93FF)
+                                        )
+                                    }
+                                    DropdownMenu(
+                                        expanded = expanded,
+                                        onDismissRequest = { expanded = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("Tirar foto") },
+                                            onClick = {
+                                                expanded = false
+                                                launchCamera()
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Obter da galeria") },
+                                            onClick = {
+                                                expanded = false
+                                                pickImageLauncher.launch("image/*")
+                                            }
+                                        )
+                                    }
                                 }
+
                                 IconButton(
                                     onClick = {
                                         if (isRecording) {
