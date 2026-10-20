@@ -83,6 +83,7 @@ import android.util.Base64
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.ui.Alignment
 
 // --- Utilitários de Gravação e Reprodução de Áudio ---
@@ -545,11 +546,15 @@ fun EventDetailScreen(
                                         )
                                     }
                                     DropdownMenu(
+                                        containerColor = Color.White,
                                         expanded = expanded,
                                         onDismissRequest = { expanded = false }
                                     ) {
                                         DropdownMenuItem(
                                             text = { Text("Tirar foto") },
+                                            colors = MenuDefaults.itemColors(
+                                                textColor = Color(0xFF0F93FF)
+                                            ),
                                             onClick = {
                                                 expanded = false
                                                 launchCamera()
@@ -557,6 +562,9 @@ fun EventDetailScreen(
                                         )
                                         DropdownMenuItem(
                                             text = { Text("Obter da galeria") },
+                                            colors = MenuDefaults.itemColors(
+                                                textColor = Color(0xFF0F93FF)
+                                            ),
                                             onClick = {
                                                 expanded = false
                                                 pickImageLauncher.launch("image/*")
