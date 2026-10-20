@@ -80,6 +80,7 @@ import com.example.login.ui.components.StudentEventRatingCard
 import java.io.File
 import java.io.FileOutputStream
 import android.util.Base64
+import android.widget.Toast
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -253,13 +254,18 @@ fun EventDetailScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
-                    val intent = Intent(context, MapsActivity::class.java).apply {
-                        putExtra("event_title", event.title)
-                        putExtra("event_location", event.location)
-                        putExtra("event_lat", event.latitude ?: -23.550520)
-                        putExtra("event_lng", event.longitude ?: -46.633308)
+                    val lat = event.latitude
+                    val lng = event.longitude
+                    if (lat != null && lng != null) {
+                        context.startActivity(Intent(context, MapsActivity::class.java).apply {
+                            putExtra("event_title", event.title)
+                            putExtra("event_location", event.location)
+                            putExtra("event_lat", lat)
+                            putExtra("event_lng", lng)
+                        })
+                    } else {
+                        Toast.makeText(context, "Este evento não tem localização no mapa", Toast.LENGTH_SHORT).show()
                     }
-                    context.startActivity(intent)
                 },
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White)
