@@ -157,6 +157,7 @@ fun EventDetailScreen(
     var editText by remember { mutableStateOf("") }
     var editRating by remember { mutableIntStateOf(0) }
     var editAudioUri by remember { mutableStateOf<Uri?>(null) }
+    var editImage by remember { mutableStateOf<Uri?>(null) }
     var commentToDelete by remember { mutableStateOf<Comment?>(null) }
 
     var averageRating by remember { mutableDoubleStateOf(0.0) }
@@ -686,6 +687,7 @@ fun EventDetailScreen(
                                                 editText = comment.content
                                                 editRating = comment.rating ?: 0
                                                 editAudioUri = comment.audioUri?.let { Uri.parse(it) }
+                                                editImage = comment.imageBase64?.let { Uri.parse(it) }
                                             },
                                             modifier = Modifier.size(28.dp)
                                         ) {
@@ -806,7 +808,7 @@ fun EventDetailScreen(
         }
     }
 
-    // Modal de Edição (Com opção de apagar o áudio)
+    // Modal de Edição
     if (commentToEdit != null) {
         AlertDialog(
             containerColor = Color.White,
@@ -842,6 +844,35 @@ fun EventDetailScreen(
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Remover áudio",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    editImage?.let { uri ->
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFE6F4FF), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Imagem anexada",
+                                fontSize = 13.sp,
+                                color = Color(0xFF0F93FF),
+                                fontWeight = FontWeight.Medium
+                            )
+                            IconButton(onClick = { editImage = null }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Remover imagem",
                                     tint = Color.Gray,
                                     modifier = Modifier.size(18.dp)
                                 )
