@@ -234,7 +234,7 @@ fun EventDetailScreen(
     onToggleEnroll: () -> Unit,
     onToggleFavorite: () -> Unit,
     onAddComment: (String, Int?, Uri?, Uri?, Uri?) -> Unit,
-    onEditComment: (String, String, Int?, Uri?) -> Unit,
+    onEditComment: (String, String, Int?, Uri?, Uri?, Uri?) -> Unit,
     onDeleteComment: (String) -> Unit,
     onRateEvent: (Int) -> Unit,
     onBack: () -> Unit,
@@ -247,6 +247,7 @@ fun EventDetailScreen(
     var editRating by remember { mutableIntStateOf(0) }
     var editAudioUri by remember { mutableStateOf<Uri?>(null) }
     var editImage by remember { mutableStateOf<Uri?>(null) }
+    var editVideo by remember { mutableStateOf<Uri?>(null) }
     var commentToDelete by remember { mutableStateOf<Comment?>(null) }
 
     var averageRating by remember { mutableDoubleStateOf(0.0) }
@@ -870,6 +871,7 @@ fun EventDetailScreen(
                                                 editRating = comment.rating ?: 0
                                                 editAudioUri = comment.audioUri?.let { Uri.parse(it) }
                                                 editImage = comment.imageBase64?.let { Uri.parse(it) }
+                                                editVideo = comment.videoUrl?.let { Uri.parse(it) }
                                             },
                                             modifier = Modifier.size(28.dp)
                                         ) {
@@ -1046,7 +1048,7 @@ fun EventDetailScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     editImage?.let { _ ->
                         Spacer(modifier = Modifier.height(12.dp))
@@ -1068,6 +1070,33 @@ fun EventDetailScreen(
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Remover imagem",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    editVideo?.let { _ ->
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFE6F4FF), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Vídeo anexado",
+                                fontSize = 13.sp,
+                                color = Color(0xFF0F93FF),
+                                fontWeight = FontWeight.Medium
+                            )
+                            IconButton(onClick = { editVideo = null }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Remover vídeo",
                                     tint = Color.Gray,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -1110,7 +1139,9 @@ fun EventDetailScreen(
                                 comment.id,
                                 editText,
                                 if (editRating > 0) editRating else null,
-                                editAudioUri
+                                editAudioUri,
+                                editImage,
+                                editVideo
                             )
                         }
                         commentToEdit = null

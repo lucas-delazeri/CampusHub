@@ -148,10 +148,13 @@ class HomeViewModel : ViewModel() {
         newContent: String,
         newRating: Int?,
         newAudioUri: Uri?,
+        newImageBase64: String? = null,
+        newVideoUri: Uri? = null,
         onResultMessage: (String) -> Unit
     ) {
         val audioPath = newAudioUri?.toString()
-        EventRepository.editComment(eventId, commentId, newContent, newRating, audioPath) { success, message ->
+        val videoPath = newVideoUri?.toString()
+        EventRepository.editComment(eventId, commentId, newContent, newRating, audioPath, newImageBase64, videoPath) { success, message ->
             onResultMessage(message ?: if (success) "Comentário atualizado!" else "Erro ao editar")
         }
     }

@@ -256,6 +256,8 @@ object EventRepository {
         newContent: String,
         newRating: Int?,
         newAudioUri: String?,
+        newImageBase64: String? = null,
+        newVideoUrl: String? = null,
         onResult: (Boolean, String?) -> Unit
     ) {
         val user = auth.currentUser
@@ -277,7 +279,9 @@ object EventRepository {
         val updates = mapOf<String, Any?>(
             "content" to newContent.trim(),
             "rating" to newRating,
-            "audioUri" to newAudioUri
+            "audioUri" to newAudioUri,
+            "imageBase64" to newImageBase64,
+            "videoUrl" to newVideoUrl
         )
 
         commentRef.updateChildren(updates)
