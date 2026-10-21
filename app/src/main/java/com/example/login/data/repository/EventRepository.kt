@@ -27,7 +27,9 @@ object EventRepository {
             location = "Auditório Central - Bloco A",
             organizer = "Diretório Acadêmico",
             category = "Carreira",
-            isEnded = true
+            isEnded = true,
+            latitude = -23.550520,
+            longitude = -46.633308
         ),
         Event(
             id = 2,
@@ -37,7 +39,9 @@ object EventRepository {
             location = "Laboratório de Informática Avançada",
             organizer = "Faculdade de Computação",
             category = "Tecnologia",
-            isEnded = true
+            isEnded = true,
+            latitude = -23.551520,
+            longitude = -46.634308
         ),
         Event(
             id = 3,
@@ -46,7 +50,9 @@ object EventRepository {
             date = "10 de Outubro, 09:00",
             location = "Sala 102 - Bloco de Engenharia",
             organizer = "IEEE Student Branch",
-            category = "Tecnologia"
+            category = "Tecnologia",
+            latitude = -23.549520,
+            longitude = -46.632308
         ),
         Event(
             id = 4,
@@ -55,7 +61,9 @@ object EventRepository {
             date = "15 de Outubro, 17:00",
             location = "Praça de Convivência Externa",
             organizer = "Secretaria de Cultura Estudantil",
-            category = "Cultura"
+            category = "Cultura",
+            latitude = -23.552520,
+            longitude = -46.635308
         ),
         Event(
             id = 5,
@@ -64,7 +72,9 @@ object EventRepository {
             date = "22 de Outubro, 10:30",
             location = "Anfiteatro da Biblioteca Central",
             organizer = "Departamento de Psicologia",
-            category = "Saúde"
+            category = "Saúde",
+            latitude = -23.548520,
+            longitude = -46.631308
         )
     )
 
