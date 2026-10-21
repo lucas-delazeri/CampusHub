@@ -197,6 +197,7 @@ object EventRepository {
         rating: Int?,
         imageBase64: String?,
         audioUri: String?,
+        videoUrl: String?,
         onResult: (Boolean, String?) -> Unit
     ) {
         val user = auth.currentUser
@@ -230,7 +231,8 @@ object EventRepository {
             publishedAt = dateStr,
             rating = rating,
             imageBase64 = imageBase64,
-            audioUri = audioUri
+            audioUri = audioUri,
+            videoUrl = videoUrl
         )
 
         commentsRef.child(commentId).setValue(comment)
