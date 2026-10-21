@@ -132,17 +132,16 @@ class HomeViewModel : ViewModel() {
         rating: Int?,
         imageBase64: String?,
         audioUri: Uri?,
+        videoUri: Uri?,
         onMessage: (String) -> Unit
     ) {
         val audioPath = audioUri?.toString()
-        // Se o seu EventRepository.addComment ainda não aceitar o audioPath,
-        // certifique-se de adicioná-lo na assinatura do repositório também.
-        EventRepository.addComment(eventId, content, rating, imageBase64, audioPath) { success, message ->
+        val videoPath = videoUri?.toString()
+        EventRepository.addComment(eventId, content, rating, imageBase64, audioPath, videoPath) { success, message ->
             onMessage(message ?: if (success) "Comentário adicionado!" else "Erro ao adicionar comentário")
         }
     }
 
-    // Atualizado para aceitar audioUri na edição
     fun editComment(
         eventId: Int,
         commentId: String,
