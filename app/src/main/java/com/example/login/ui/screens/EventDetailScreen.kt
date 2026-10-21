@@ -73,6 +73,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
@@ -830,7 +831,10 @@ fun EventDetailScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Row(
+                                    modifier = Modifier.weight(1f, fill = false),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Icon(
                                         imageVector = Icons.Default.Person,
                                         contentDescription = null,
@@ -842,19 +846,23 @@ fun EventDetailScreen(
                                         text = comment.authorName,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,
-                                        color = Color.Black
+                                        color = Color.Black,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
+
+                                Spacer(modifier = Modifier.width(8.dp))
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
                                         text = comment.publishedAt,
-                                        fontSize = 12.sp,
+                                        fontSize = 11.sp,
                                         color = Color.Gray
                                     )
 
                                     if (comment.authorId == currentUserId) {
-                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Spacer(modifier = Modifier.width(2.dp))
                                         IconButton(
                                             onClick = {
                                                 commentToEdit = comment
