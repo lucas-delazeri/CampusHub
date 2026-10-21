@@ -1,11 +1,13 @@
 package com.example.login.ui.screens
 
+import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Build
-import android.content.Context
+import android.util.Base64
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -36,8 +38,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Star
@@ -46,8 +48,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -61,6 +66,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -70,7 +76,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
+import coil.ImageLoader
 import coil.compose.AsyncImage
+import coil.decode.VideoFrameDecoder
+import coil.request.ImageRequest
+import coil.request.videoFrameMillis
 import com.example.login.data.model.Comment
 import com.example.login.data.model.Event
 import com.example.login.data.repository.EventRepository
@@ -79,15 +89,7 @@ import com.example.login.ui.components.MapsActivity
 import com.example.login.ui.components.StudentEventRatingCard
 import java.io.File
 import java.io.FileOutputStream
-import android.util.Base64
-import android.widget.Toast
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MenuDefaults
-import androidx.compose.ui.Alignment
 
-// --- Utilitários de Gravação e Reprodução de Áudio ---
 class AndroidAudioRecorder(private val context: Context) {
     private var recorder: MediaRecorder? = null
 
@@ -138,6 +140,91 @@ class AndroidAudioPlayer(private val context: Context) {
     }
 }
 
+fun openVideo(context: Context, uri: Uri) {
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        val playableUri = if (uri.scheme == "file") {
+            val file = uri.path?.let { File(it) }
+            if (file != null && file.exists()) {
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    file
+                )
+            } else {
+                uri
+            }
+        } else {
+            uri
+        }
+
+        setDataAndType(playableUri, "video/*")
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
+    try {
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(
+            context,
+            "Nenhum aplicativo encontrado para reproduzir este vídeo.",
+            Toast.LENGTH_LONG
+        ).show()
+    }
+}
+
+@Composable
+fun VideoThumbnail(
+    uri: Uri,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    val context = LocalContext.current
+
+    val imageLoader = remember {
+        ImageLoader.Builder(context)
+            .components { add(VideoFrameDecoder.Factory()) }
+            .build()
+    }
+
+    val request = remember(uri) {
+        ImageRequest.Builder(context)
+            .data(uri)
+            .videoFrameMillis(1000)
+            .crossfade(true)
+            .build()
+    }
+
+    Box(
+        modifier = modifier
+            .background(Color.Black)
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier),
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = request,
+            imageLoader = imageLoader,
+            contentDescription = "Miniatura do vídeo",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(Color(0x99000000), RoundedCornerShape(24.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = "Reproduzir vídeo",
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
+            )
+        }
+    }
+}
+
 @Composable
 fun EventDetailScreen(
     event: Event,
@@ -145,7 +232,7 @@ fun EventDetailScreen(
     currentUserId: String?,
     onToggleEnroll: () -> Unit,
     onToggleFavorite: () -> Unit,
-    onAddComment: (String, Int?, Uri?, Uri?) -> Unit,
+    onAddComment: (String, Int?, Uri?, Uri?, Uri?) -> Unit,
     onEditComment: (String, String, Int?, Uri?) -> Unit,
     onDeleteComment: (String) -> Unit,
     onRateEvent: (Int) -> Unit,
@@ -166,6 +253,9 @@ fun EventDetailScreen(
     var userRating by remember { mutableStateOf<Int?>(null) }
     var photoUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     var tempUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+
+    var videoUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var tempVideoUri by rememberSaveable { mutableStateOf<Uri?>(null) }
 
     val takePictureLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
@@ -189,6 +279,35 @@ fun EventDetailScreen(
         )
         tempUri = uri
         takePictureLauncher.launch(uri)
+    }
+
+    val recordVideoLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CaptureVideo()
+    ) { success ->
+        if (success && tempVideoUri != null) {
+            videoUri = tempVideoUri
+            Toast.makeText(context, "Vídeo gravado com sucesso!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val pickVideoLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            videoUri = uri
+        }
+    }
+
+    fun launchVideoCamera() {
+        val dir = File(context.cacheDir, "videos").apply { mkdirs() }
+        val file = File(dir, "EventVid_${System.currentTimeMillis()}.mp4")
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+        tempVideoUri = uri
+        recordVideoLauncher.launch(uri)
     }
 
     DisposableEffect(event.id) {
@@ -432,7 +551,7 @@ fun EventDetailScreen(
             val audioPlayer = remember { AndroidAudioPlayer(context) }
 
             var isRecording by rememberSaveable { mutableStateOf(false) }
-            var audioFile by rememberSaveable { mutableStateOf<File?>(null) }
+            var audioFile by remember { mutableStateOf<File?>(null) }
             var audioUri by rememberSaveable { mutableStateOf<Uri?>(null) }
             var isPlayingAudio by rememberSaveable { mutableStateOf(false) }
 
@@ -459,6 +578,34 @@ fun EventDetailScreen(
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Remover foto",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+
+                videoUri?.let { uri ->
+                    Box(modifier = Modifier.padding(bottom = 8.dp)) {
+                        VideoThumbnail(
+                            uri = uri,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                            onClick = { openVideo(context, uri) }
+                        )
+                        IconButton(
+                            onClick = { videoUri = null },
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(4.dp)
+                                .size(28.dp)
+                                .background(Color(0x99000000), RoundedCornerShape(14.dp))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Remover vídeo",
                                 tint = Color.White,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -548,7 +695,7 @@ fun EventDetailScreen(
                                     IconButton(onClick = { expanded = !expanded }) {
                                         Icon(
                                             imageVector = Icons.Default.CameraAlt,
-                                            contentDescription = "Adicionar foto",
+                                            contentDescription = "Adicionar mídia",
                                             tint = Color(0xFF0F93FF)
                                         )
                                     }
@@ -575,6 +722,26 @@ fun EventDetailScreen(
                                             onClick = {
                                                 expanded = false
                                                 pickImageLauncher.launch("image/*")
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Gravar vídeo") },
+                                            colors = MenuDefaults.itemColors(
+                                                textColor = Color(0xFF0F93FF)
+                                            ),
+                                            onClick = {
+                                                expanded = false
+                                                launchVideoCamera()
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Vídeo da galeria") },
+                                            colors = MenuDefaults.itemColors(
+                                                textColor = Color(0xFF0F93FF)
+                                            ),
+                                            onClick = {
+                                                expanded = false
+                                                pickVideoLauncher.launch("video/*")
                                             }
                                         )
                                     }
@@ -606,16 +773,17 @@ fun EventDetailScreen(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    val hasContent = newCommentText.isNotBlank() || photoUri != null || audioUri != null
+                    val hasContent = newCommentText.isNotBlank() || photoUri != null || audioUri != null || videoUri != null
 
                     IconButton(
                         onClick = {
                             if (hasContent) {
-                                onAddComment(newCommentText, userRating, photoUri, audioUri)
+                                onAddComment(newCommentText, userRating, photoUri, audioUri, videoUri)
                                 newCommentText = ""
                                 photoUri = null
                                 audioUri = null
                                 audioFile = null
+                                videoUri = null
                             }
                         },
                         modifier = Modifier
@@ -743,6 +911,19 @@ fun EventDetailScreen(
                                 )
                             }
 
+                            comment.videoUrl?.let { url ->
+                            val remoteVideoUri = remember(url) { Uri.parse(url) }
+                            Spacer(modifier = Modifier.height(8.dp))
+                                VideoThumbnail(
+                                    uri = remoteVideoUri,
+                                     modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                        .clip(RoundedCornerShape(8.dp)),
+                                        onClick = { openVideo(context, remoteVideoUri) }
+                                )
+                            }
+
                             comment.audioUri?.let { audioPath ->
                                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -830,7 +1011,7 @@ fun EventDetailScreen(
                         shape = RoundedCornerShape(8.dp)
                     )
 
-                    editAudioUri?.let { uri ->
+                    editAudioUri?.let { _ ->
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
                             modifier = Modifier
@@ -859,7 +1040,7 @@ fun EventDetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    editImage?.let { uri ->
+                    editImage?.let { _ ->
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
                             modifier = Modifier
