@@ -15,8 +15,8 @@ import java.util.Date
 import java.util.Locale
 
 object EventRepository {
-    private val db = FirebaseDatabase.getInstance().reference
-    private val auth = FirebaseAuth.getInstance()
+    private val db by lazy { FirebaseDatabase.getInstance().reference }
+    private val auth by lazy { FirebaseAuth.getInstance() }
 
     private val defaultEventsList = listOf(
         Event(
@@ -127,7 +127,7 @@ object EventRepository {
     }
 
     fun unenroll(eventId: Int) {
-        enrolledEventIds = enrolledEventIds - eventId // Corrigido operador de subtração do Set
+        enrolledEventIds = enrolledEventIds - eventId
         syncWithDatabase()
     }
 
@@ -162,7 +162,7 @@ object EventRepository {
     }
 
     fun unfavorite(eventId: Int) {
-        favoriteEventsId = favoriteEventsId - eventId // Corrigido operador de subtração do Set
+        favoriteEventsId = favoriteEventsId - eventId
         syncFavoriteEventsWithDatabase()
     }
 

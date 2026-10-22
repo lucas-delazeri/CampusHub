@@ -1,9 +1,11 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
+    id("org.jetbrains.kotlinx.kover") version "0.9.1"
     id("jacoco")
 }
 val exclusions = listOf(
@@ -51,10 +53,13 @@ android {
     }
 
     testOptions {
-        unitTests.all {
-            it.testLogging {
-                events("passed", "failed", "skipped")
-                showStandardStreams = true
+        unitTests {
+            isReturnDefaultValues = true
+            all {
+                it.testLogging {
+                    events("passed", "failed", "skipped")
+                    showStandardStreams = true
+                }
             }
         }
     }
@@ -81,27 +86,6 @@ android {
             )
         }
     }
-}
-
-tasks.register<JacocoReport>("jacocoDebugCodeCoverage") {
-    dependsOn("testDebugUnitTest", "connectedDebugAndroidTest")
-    group = "Reporting"
-    description = "Execute UI and unit tests, generate and combine Jacoco coverage report"
-
-    reports {
-        xml.required.set(true)
-        html.required.set(true)
-    }
-
-    sourceDirectories.setFrom(layout.projectDirectory.dir("src/main"))
-    classDirectories.setFrom(files(
-        fileTree(layout.buildDirectory.dir("intermediates/javac/debug")) { exclude(exclusions) },
-        fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) { exclude(exclusions) },
-        fileTree(layout.buildDirectory.dir("intermediates/built_in_kotlinc/debug")) { exclude(exclusions) }
-    ))
-    executionData.setFrom(files(
-        fileTree(layout.buildDirectory) { include("**/*.exec", "**/*.ec") }
-    ))
 }
 
 dependencies {
@@ -140,6 +124,7 @@ dependencies {
     testImplementation("androidx.test:core:1.7.0")
     testImplementation("org.mockito:mockito-core:5.24.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
+    testImplementation("io.mockk:mockk:1.13.12")
     testImplementation(kotlin("test"))
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -160,5 +145,54 @@ tasks.withType<Test>().configureEach {
     configure<JacocoTaskExtension> {
         isIncludeNoLocationClasses = true
         excludes = listOf("jdk.internal.*")
+    }
+}
+
+tasks.register<JacocoReport>("jacocoUnitReport") {
+    dependsOn("testDebugUnitTest")
+    group = "Reporting"
+    description = "Generate JaCoCo coverage report strictly for unit tests"
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    val fileFilter = listOf(
+        "**/R.class", "**/R\$*.class", "**/BuildConfig.*", "**/Manifest*.*",
+        "**/*Test*.*", "android/**/*.*", "**/*Binding*.*", "**/databinding/**"
+    )
+
+    // Aponta diretamente para a árvore geral de classes compiladas do diretório debug
+    val debugTree = fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
+        exclude(fileFilter)
+    }
+    val javaTree = fileTree(layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes")) {
+        exclude(fileFilter)
+    }
+
+    classDirectories.setFrom(files(debugTree, javaTree))
+
+    val mainSrc = layout.projectDirectory.dir("src/main/java").asFile.path
+    sourceDirectories.setFrom(files(mainSrc))
+
+    executionData.setFrom(fileTree(layout.buildDirectory) {
+        include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
+    })
+}
+
+kover {
+    reports {
+        filters {
+            excludes {
+                classes(
+                    "*BuildConfig",
+                    "*ComposableSingletons*",
+                    "*ScreenKt*",
+                    "*.di.*",
+                    "*Generated*"
+                )
+            }
+        }
     }
 }

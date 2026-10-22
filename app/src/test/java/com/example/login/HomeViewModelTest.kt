@@ -15,11 +15,9 @@ import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
 import org.junit.After
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 
 class HomeViewModelTest {
 
@@ -67,7 +65,7 @@ class HomeViewModelTest {
 
         viewModel.createEvent("t", "d", "date", "loc", "cat") { message = it }
 
-        assertEquals("Apenas professores podem criar eventos.", message)
+        Assert.assertEquals("Apenas professores podem criar eventos.", message)
         verify(exactly = 0) { EventRepository.createEvent(any()) }
     }
 
@@ -78,7 +76,7 @@ class HomeViewModelTest {
 
         viewModel.createEvent("", "d", "date", "loc", "cat") { message = it }
 
-        assertEquals("Preencha todos os campos obrigatórios.", message)
+        Assert.assertEquals("Preencha todos os campos obrigatórios.", message)
         verify(exactly = 0) { EventRepository.createEvent(any()) }
     }
 
@@ -97,13 +95,13 @@ class HomeViewModelTest {
 
         viewModel.createEvent("Aula", "Desc", "02/02/2000", "Sala 1", "Tecnologia") { message = it }
 
-        assertEquals("Evento criado com sucesso!", message)
-        assertEquals(6, captured.captured.id)
-        assertEquals("Tecnologia", captured.captured.category)
-        assertEquals("Professor", captured.captured.organizer)
-        assertEquals(-23.550520, captured.captured.latitude)
-        assertEquals(-46.633308, captured.captured.longitude)
-        assertFalse(captured.captured.isEnded)
+        Assert.assertEquals("Evento criado com sucesso!", message)
+        Assert.assertEquals(6, captured.captured.id)
+        Assert.assertEquals("Tecnologia", captured.captured.category)
+        Assert.assertEquals("Professor", captured.captured.organizer)
+        Assert.assertEquals(-23.550520, captured.captured.latitude)
+        Assert.assertEquals(-46.633308, captured.captured.longitude)
+        Assert.assertFalse(captured.captured.isEnded)
     }
 
     @Test
@@ -113,7 +111,10 @@ class HomeViewModelTest {
 
         viewModel.toggleEnrollment(sampleEvent(isEnded = true)) { message = it }
 
-        assertEquals("Este evento já encerrou. Ações de inscrição estão desativadas.", message)
+        Assert.assertEquals(
+            "Este evento já encerrou. Ações de inscrição estão desativadas.",
+            message
+        )
         verify(exactly = 0) { EventRepository.enroll(any()) }
     }
 
@@ -126,7 +127,7 @@ class HomeViewModelTest {
 
         viewModel.toggleEnrollment(sampleEvent()) { message = it }
 
-        assertEquals("Inscrição realizada com sucesso!", message)
+        Assert.assertEquals("Inscrição realizada com sucesso!", message)
         verify { EventRepository.enroll(1) }
     }
 
@@ -135,6 +136,6 @@ class HomeViewModelTest {
         every { EventRepository.userRole } returns "PROFESSOR"
         viewModel = HomeViewModel()
 
-        assertTrue(viewModel.isTeacher)
+        Assert.assertTrue(viewModel.isTeacher)
     }
 }
