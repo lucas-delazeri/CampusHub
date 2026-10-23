@@ -116,6 +116,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-database")
     implementation("com.google.firebase:firebase-storage")
+    androidTestImplementation("com.google.firebase:testlab-instr-lib:0.2")
 
     implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation("org.osmdroid:osmdroid-android:6.1.18")
@@ -132,6 +133,8 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation("io.mockk:mockk-android:1.13.12")
+    androidTestImplementation("androidx.test:runner:1.7.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
 
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
