@@ -1,5 +1,6 @@
 package com.example.login
 
+import android.net.Uri
 import com.example.login.data.model.Event
 import com.example.login.data.repository.EventRepository
 import com.example.login.ui.viewmodel.HomeViewModel
@@ -58,6 +59,48 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun userProperties_fallbackValuesWhenUserNull() {
+        viewModel = HomeViewModel()
+
+        Assert.assertEquals("Estudante", viewModel.userName)
+        Assert.assertEquals("No email", viewModel.email)
+        Assert.assertNull(viewModel.currentUserId)
+    }
+
+    @Test
+    fun userProperties_valuesWhenUserPresent() {
+        val user = mockk<FirebaseUser>()
+        every { user.displayName } returns "Lucas"
+        every { user.email } returns "lucas@example.com"
+        every { user.uid } returns "uid123"
+        every { auth.currentUser } returns user
+
+        viewModel = HomeViewModel()
+
+        Assert.assertEquals("Lucas", viewModel.userName)
+        Assert.assertEquals("lucas@example.com", viewModel.email)
+        Assert.assertEquals("uid123", viewModel.currentUserId)
+    }
+
+    @Test
+    fun changeTab_updatesCurrentTab() {
+        viewModel = HomeViewModel()
+        Assert.assertEquals(0, viewModel.currentTab)
+
+        viewModel.changeTab(2)
+
+        Assert.assertEquals(2, viewModel.currentTab)
+    }
+
+    @Test
+    fun isTeacher_isCaseInsensitive() {
+        every { EventRepository.userRole } returns "PROFESSOR"
+        viewModel = HomeViewModel()
+
+        Assert.assertTrue(viewModel.isTeacher)
+    }
+
+    @Test
     fun createEvent_nonTeacher_isRejected() {
         every { EventRepository.userRole } returns "aluno"
         viewModel = HomeViewModel()
@@ -81,6 +124,20 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun createEvent_blankCategory_usesDefaultCategory() {
+        val captured = slot<Event>()
+        every { EventRepository.createEvent(capture(captured)) } just Runs
+
+        viewModel = HomeViewModel()
+        var message: String? = null
+
+        viewModel.createEvent("Aula", "Desc", "02/02/2000", "Sala 1", "") { message = it }
+
+        Assert.assertEquals("Evento criado com sucesso!", message)
+        Assert.assertEquals("Geral", captured.captured.category)
+    }
+
+    @Test
     fun createEvent_teacher_createsEventWithDefaults() {
         val user = mockk<FirebaseUser>()
         every { user.displayName } returns "Professor"
@@ -99,9 +156,18 @@ class HomeViewModelTest {
         Assert.assertEquals(6, captured.captured.id)
         Assert.assertEquals("Tecnologia", captured.captured.category)
         Assert.assertEquals("Professor", captured.captured.organizer)
-        Assert.assertEquals(-23.550520, captured.captured.latitude)
-        Assert.assertEquals(-46.633308, captured.captured.longitude)
+        Assert.assertEquals(-23.550520, captured.captured.latitude!!, 0.0001)
+        Assert.assertEquals(-46.633308, captured.captured.longitude!!, 0.0001)
         Assert.assertFalse(captured.captured.isEnded)
+    }
+
+    @Test
+    fun isEventEnrolled_delegatesToRepository() {
+        every { EventRepository.isEnrolled(10) } returns true
+        viewModel = HomeViewModel()
+
+        Assert.assertTrue(viewModel.isEventEnrolled(10))
+        verify { EventRepository.isEnrolled(10) }
     }
 
     @Test
@@ -132,10 +198,143 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun isTeacher_isCaseInsensitive() {
-        every { EventRepository.userRole } returns "PROFESSOR"
+    fun toggleEnrollment_alreadyEnrolled_unenrolls() {
+        every { EventRepository.isEnrolled(1) } returns true
+        every { EventRepository.unenroll(1) } just Runs
         viewModel = HomeViewModel()
+        var message: String? = null
 
-        Assert.assertTrue(viewModel.isTeacher)
+        viewModel.toggleEnrollment(sampleEvent()) { message = it }
+
+        Assert.assertEquals("Inscrição cancelada com sucesso!", message)
+        verify { EventRepository.unenroll(1) }
+    }
+
+    @Test
+    fun toggleFavorite_notFavorite_favorites() {
+        every { EventRepository.isFavorite(1) } returns false
+        every { EventRepository.favorited(1) } just Runs
+        viewModel = HomeViewModel()
+        var message: String? = null
+
+        viewModel.toggleFavorite(sampleEvent()) { message = it }
+
+        Assert.assertEquals("Evento favoritado!", message)
+        verify { EventRepository.favorited(1) }
+    }
+
+    @Test
+    fun toggleFavorite_alreadyFavorite_unfavorites() {
+        every { EventRepository.isFavorite(1) } returns true
+        every { EventRepository.unfavorite(1) } just Runs
+        viewModel = HomeViewModel()
+        var message: String? = null
+
+        viewModel.toggleFavorite(sampleEvent()) { message = it }
+
+        Assert.assertEquals("Evento desfavoritado!", message)
+        verify { EventRepository.unfavorite(1) }
+    }
+
+    @Test
+    fun signOut_clearsDataAndCallsCallback() {
+        every { EventRepository.clearLocalData() } just Runs
+        viewModel = HomeViewModel()
+        var called = false
+
+        viewModel.signOut { called = true }
+
+        verify { auth.signOut() }
+        verify { EventRepository.clearLocalData() }
+        Assert.assertTrue(called)
+    }
+
+    @Test
+    fun updateProfile_whenUserNull_callsOnComplete() {
+        every { auth.currentUser } returns null
+        viewModel = HomeViewModel()
+        var completed = false
+
+        viewModel.updateProfile("Novo Nome") { completed = true }
+
+        Assert.assertTrue(completed)
+    }
+
+    @Test
+    fun addComment_delegatesToRepository() {
+        val slotMessage = slot<(Boolean, String?) -> Unit>()
+        every {
+            EventRepository.addComment(1, "Texto", 5, "img", "audioPath", "videoPath", capture(slotMessage))
+        } answers {
+            slotMessage.captured.invoke(true, "Comentário adicionado com sucesso!")
+        }
+
+        viewModel = HomeViewModel()
+        var message: String? = null
+
+        val mockAudioUri = mockk<Uri>()
+        every { mockAudioUri.toString() } returns "audioPath"
+        val mockVideoUri = mockk<Uri>()
+        every { mockVideoUri.toString() } returns "videoPath"
+
+        viewModel.addComment(1, "Texto", 5, "img", mockAudioUri, mockVideoUri) { message = it }
+
+        Assert.assertEquals("Comentário adicionado com sucesso!", message)
+    }
+
+    @Test
+    fun editComment_delegatesToRepository() {
+        val slotMessage = slot<(Boolean, String?) -> Unit>()
+        every {
+            EventRepository.editComment(1, "c1", "novo", 4, "audioPath", "img", "videoPath", capture(slotMessage))
+        } answers {
+            slotMessage.captured.invoke(true, "Comentário editado com sucesso!")
+        }
+
+        viewModel = HomeViewModel()
+        var message: String? = null
+
+        val mockAudioUri = mockk<Uri>()
+        every { mockAudioUri.toString() } returns "audioPath"
+        val mockVideoUri = mockk<Uri>()
+        every { mockVideoUri.toString() } returns "videoPath"
+
+        viewModel.editComment(1, "c1", "novo", 4, mockAudioUri, "img", mockVideoUri) { message = it }
+
+        Assert.assertEquals("Comentário editado com sucesso!", message)
+    }
+
+    @Test
+    fun deleteComment_delegatesToRepository() {
+        val slotMessage = slot<(Boolean, String?) -> Unit>()
+        every {
+            EventRepository.deleteComment(1, "c1", capture(slotMessage))
+        } answers {
+            slotMessage.captured.invoke(true, "Comentário excluído com sucesso!")
+        }
+
+        viewModel = HomeViewModel()
+        var message: String? = null
+
+        viewModel.deleteComment(1, "c1") { message = it }
+
+        Assert.assertEquals("Comentário excluído com sucesso!", message)
+    }
+
+    @Test
+    fun rateEvent_delegatesToRepository() {
+        val slotMessage = slot<(Boolean, String?) -> Unit>()
+        every {
+            EventRepository.rateEvent(1, 5, capture(slotMessage))
+        } answers {
+            slotMessage.captured.invoke(true, "Avaliação salva com sucesso!")
+        }
+
+        viewModel = HomeViewModel()
+        var message: String? = null
+
+        viewModel.rateEvent(1, 5) { message = it }
+
+        Assert.assertEquals("Avaliação salva com sucesso!", message)
     }
 }
