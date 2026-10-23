@@ -160,28 +160,33 @@ tasks.register<JacocoReport>("jacocoUnitReport") {
 
     val fileFilter = listOf(
         "**/R.class", "**/R\$*.class", "**/BuildConfig.*", "**/Manifest*.*",
-        "**/*Test*.*", "android/**/*.*", "**/*Binding*.*", "**/databinding/**"
+        "**/*Test*.*", "android/**/*.*", "**/*Binding*.*", "**/databinding/**",
+        "**/ui/screens/**", "**/ui/components/**", "**/ui/theme/**", "**/*Activity*.*",
+        "**/data/utils/*Recorder*.*", "**/data/utils/*Player*.*", "**/util/*Player*.*"
     )
 
-    // Aponta diretamente para a árvore geral de classes compiladas do diretório debug
-    val debugTree = fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
+    val debugTree = fileTree(layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes")) {
         exclude(fileFilter)
     }
-    val javaTree = fileTree(layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes")) {
+    val kotlinTree = fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
         exclude(fileFilter)
     }
 
-    classDirectories.setFrom(files(debugTree, javaTree))
+    classDirectories.setFrom(files(debugTree, kotlinTree))
 
     val mainSrc = layout.projectDirectory.dir("src/main/java").asFile.path
     sourceDirectories.setFrom(files(mainSrc))
 
     executionData.setFrom(fileTree(layout.buildDirectory) {
-        include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
+        include(
+            "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec",
+            "jacoco/testDebugUnitTest.exec"
+        )
     })
 }
 
 kover {
+    useJacoco("0.8.12")
     reports {
         filters {
             excludes {
@@ -190,7 +195,13 @@ kover {
                     "*ComposableSingletons*",
                     "*ScreenKt*",
                     "*.di.*",
-                    "*Generated*"
+                    "*Generated*",
+                    "com.example.login.ui.screens.*",
+                    "com.example.login.ui.components.*",
+                    "com.example.login.ui.theme.*",
+                    "com.example.login.*Activity*",
+                    "com.example.login.data.utils.*Recorder*",
+                    "com.example.login.util.*Player*"
                 )
             }
         }
