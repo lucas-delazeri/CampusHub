@@ -140,21 +140,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
 
-jacoco {
-    toolVersion = "0.8.12"
-}
-
-tasks.withType<Test>().configureEach {
-    configure<JacocoTaskExtension> {
-        isIncludeNoLocationClasses = true
-        excludes = listOf("jdk.internal.*")
-    }
-}
-
-tasks.register<JacocoReport>("jacocoUnitReport") {
+tasks.register<JacocoReport>("jacocoReport") {
     dependsOn("testDebugUnitTest")
     group = "Reporting"
-    description = "Generate JaCoCo coverage report strictly for unit tests"
+    description = "Generate JaCoCo coverage report for Debug unit tests"
 
     reports {
         xml.required.set(true)
@@ -164,8 +153,13 @@ tasks.register<JacocoReport>("jacocoUnitReport") {
     val fileFilter = listOf(
         "**/R.class", "**/R\$*.class", "**/BuildConfig.*", "**/Manifest*.*",
         "**/*Test*.*", "android/**/*.*", "**/*Binding*.*", "**/databinding/**",
-        "**/ui/screens/**", "**/ui/components/**", "**/ui/theme/**", "**/*Activity*.*",
-        "**/data/utils/*Recorder*.*", "**/data/utils/*Player*.*", "**/util/*Player*.*"
+        "com/example/login/ui/screens/**",
+        "com/example/login/ui/components/**",
+        "com/example/login/ui/theme/**",
+        "com/example/login/*Activity*.*",
+        "com/example/login/data/utils/*Recorder*.*",
+        "com/example/login/data/utils/*Player*.*",
+        "com/example/login/util/*Player*.*"
     )
 
     val debugTree = fileTree(layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes")) {
@@ -176,37 +170,9 @@ tasks.register<JacocoReport>("jacocoUnitReport") {
     }
 
     classDirectories.setFrom(files(debugTree, kotlinTree))
-
-    val mainSrc = layout.projectDirectory.dir("src/main/java").asFile.path
-    sourceDirectories.setFrom(files(mainSrc))
+    sourceDirectories.setFrom(files("src/main/java", "src/main/kotlin"))
 
     executionData.setFrom(fileTree(layout.buildDirectory) {
-        include(
-            "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec",
-            "jacoco/testDebugUnitTest.exec"
-        )
+        include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
     })
-}
-
-kover {
-    useJacoco("0.8.12")
-    reports {
-        filters {
-            excludes {
-                classes(
-                    "*BuildConfig",
-                    "*ComposableSingletons*",
-                    "*ScreenKt*",
-                    "*.di.*",
-                    "*Generated*",
-                    "com.example.login.ui.screens.*",
-                    "com.example.login.ui.components.*",
-                    "com.example.login.ui.theme.*",
-                    "com.example.login.*Activity*",
-                    "com.example.login.data.utils.*Recorder*",
-                    "com.example.login.util.*Player*"
-                )
-            }
-        }
-    }
 }
