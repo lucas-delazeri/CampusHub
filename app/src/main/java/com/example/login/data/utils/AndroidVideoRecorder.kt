@@ -61,11 +61,11 @@ class AndroidVideoRecorder(private val context: Context) {
         onVideoSaved: (uriPath: String) -> Unit,
         onError: (exception: Throwable) -> Unit
     ) {
+        if (currentRecording != null) return
         val videoCapture = this.videoCapture ?: run {
             onError(IllegalStateException("Câmera não inicializada ou sessão não iniciada."))
             return
         }
-        if (currentRecording != null) return
 
         val name = "Video_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(System.currentTimeMillis())}.mp4"
 
