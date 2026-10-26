@@ -161,18 +161,4 @@ tasks.register<JacocoReport>("jacocoReport") {
         "com/example/login/data/utils/*Player*.*",
         "com/example/login/util/*Player*.*"
     )
-
-    val debugTree = fileTree(layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes")) {
-        exclude(fileFilter)
-    }
-    val kotlinTree = fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
-        exclude(fileFilter)
-    }
-
-    classDirectories.setFrom(files(debugTree, kotlinTree))
-    sourceDirectories.setFrom(files("src/main/java", "src/main/kotlin"))
-
-    executionData.setFrom(fileTree(layout.buildDirectory) {
-        include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
-    })
 }
