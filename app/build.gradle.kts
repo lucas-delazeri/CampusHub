@@ -62,6 +62,7 @@ android {
                 }
             }
         }
+        unitTests.isIncludeAndroidResources = true
     }
 
     compileOptions {
@@ -98,6 +99,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.junit.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("androidx.compose.material:material-icons-extended")
@@ -123,6 +125,8 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.test:core:1.7.0")
+    testImplementation(libs.androidx.junit.ktx)
+    testImplementation("org.robolectric:robolectric:4.14.1")
     testImplementation("org.mockito:mockito-core:5.24.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
     testImplementation("io.mockk:mockk:1.13.12")
@@ -131,6 +135,7 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation("androidx.test.espresso:espresso-intents:3.7.0")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation("io.mockk:mockk-android:1.13.12")
     androidTestImplementation("androidx.test:runner:1.7.0")
