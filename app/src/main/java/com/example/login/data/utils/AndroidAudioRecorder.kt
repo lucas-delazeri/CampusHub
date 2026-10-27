@@ -1,25 +1,27 @@
-package com.example.login.data.utils;
+package com.example.login.data.utils
 
-import android.content.Context;
-import android.media.MediaRecorder;
-import android.os.Build;
-import java.io.File;
-import java.io.FileOutputStream;
-
-import kotlin.Suppress;
+import android.content.Context
+import android.media.MediaRecorder
+import android.os.Build
+import java.io.File
+import java.io.FileOutputStream
 
 class AndroidAudioRecorder(
-    private val context: Context
-) {
-    private var recorder: MediaRecorder? = null
-
-    private fun createRecorder(): MediaRecorder {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            MediaRecorder(context)
+    private val context: Context,
+    private val sdkInt: Int = Build.VERSION.SDK_INT,
+    private val recorderFactory: (Context, Int) -> MediaRecorder = { ctx, sdk ->
+        if (sdk >= Build.VERSION_CODES.S) {
+            @Suppress("NewApi")
+            MediaRecorder(ctx)
         } else {
             @Suppress("DEPRECATION")
             MediaRecorder()
         }
+    }
+) {
+    private var recorder: MediaRecorder? = null
+    private fun createRecorder(): MediaRecorder {
+        return recorderFactory(context, sdkInt)
     }
 
     fun start(outputFile: File) {
