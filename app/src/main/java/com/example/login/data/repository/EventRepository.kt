@@ -99,6 +99,16 @@ object EventRepository {
         db.child("events").child(newEvent.id.toString()).setValue(newEvent)
     }
 
+    fun updateEvent(updatedEvent: Event) {
+        allEvents = allEvents.map { if (it.id == updatedEvent.id) updatedEvent else it }
+        db.child("events").child(updatedEvent.id.toString()).setValue(updatedEvent)
+    }
+
+    fun endEvent(eventId: Int) {
+        allEvents = allEvents.map { if (it.id == eventId) it.copy(isEnded = true) else it }
+        db.child("events").child(eventId.toString()).child("isEnded").setValue(true)
+    }
+
     var enrolledEventIds by mutableStateOf(setOf<Int>())
         private set
 

@@ -17,6 +17,7 @@ class HomeViewModel : ViewModel() {
     var currentTab by mutableStateOf(0)
     var selectedEvent by mutableStateOf<Event?>(null)
     var isCreatingEvent by mutableStateOf(false)
+    var editingEvent by mutableStateOf<Event?>(null)
     var userName by mutableStateOf(auth.currentUser?.displayName ?: "Estudante")
     val email: String = auth.currentUser?.email ?: "No email"
 
@@ -40,6 +41,8 @@ class HomeViewModel : ViewModel() {
         category: String,
         lat: Double? = null,
         lng: Double? = null,
+        maxCapacity: Int = 0,
+        imageBase64: String? = null,
         onResultMessage: (String) -> Unit
     ) {
         if (!isTeacher) {
@@ -61,10 +64,68 @@ class HomeViewModel : ViewModel() {
             category = if (category.isBlank()) "Geral" else category,
             isEnded = false,
             latitude = lat ?: -23.550520,
-            longitude = lng ?: -46.633308
+            longitude = lng ?: -46.633308,
+            maxCapacity = maxCapacity,
+            imageBase64 = imageBase64
         )
         EventRepository.createEvent(newEvent)
         onResultMessage("Evento criado com sucesso!")
+    }
+
+    fun updateEvent(
+        eventId: Int,
+        title: String,
+        description: String,
+        date: String,
+        location: String,
+        category: String,
+        lat: Double? = null,
+        lng: Double? = null,
+        maxCapacity: Int = 0,
+        imageBase64: String? = null,
+        onResultMessage: (String) -> Unit
+    ) {
+        if (!isTeacher) {
+            onResultMessage("Apenas professores podem editar eventos.")
+            return
+        }
+        if (title.isBlank() || description.isBlank() || date.isBlank() || location.isBlank()) {
+            onResultMessage("Preencha todos os campos obrigatórios.")
+            return
+        }
+        val currentEvent = EventRepository.allEvents.find { it.id == eventId } ?: run {
+            onResultMessage("Evento não encontrado.")
+            return
+        }
+        val updated = currentEvent.copy(
+            title = title,
+            description = description,
+            date = date,
+            location = location,
+            category = if (category.isBlank()) "Geral" else category,
+            latitude = lat ?: currentEvent.latitude,
+            longitude = lng ?: currentEvent.longitude,
+            maxCapacity = maxCapacity,
+            imageBase64 = imageBase64 ?: currentEvent.imageBase64
+        )
+        EventRepository.updateEvent(updated)
+        if (selectedEvent?.id == eventId) {
+            selectedEvent = updated
+        }
+        editingEvent = null
+        onResultMessage("Evento atualizado com sucesso!")
+    }
+
+    fun endEvent(eventId: Int, onResultMessage: (String) -> Unit) {
+        if (!isTeacher) {
+            onResultMessage("Apenas professores podem encerrar eventos.")
+            return
+        }
+        EventRepository.endEvent(eventId)
+        if (selectedEvent?.id == eventId) {
+            selectedEvent = selectedEvent?.copy(isEnded = true)
+        }
+        onResultMessage("Evento encerrado com sucesso!")
     }
 
     fun changeTab(tabIndex: Int) {
@@ -125,7 +186,6 @@ class HomeViewModel : ViewModel() {
     val currentUserId: String?
         get() = auth.currentUser?.uid
 
-    // Atualizado para aceitar audioUri (convertido para String)
     fun addComment(
         eventId: Int,
         content: String,

@@ -10,5 +10,7 @@ data class Event(
     val category: String = "",
     val isEnded: Boolean = false,
     val latitude: Double? = null,
-    val longitude: Double? = null
+    val longitude: Double? = null,
+    val maxCapacity: Int = 0,
+    val imageBase64: String? = null
 )
