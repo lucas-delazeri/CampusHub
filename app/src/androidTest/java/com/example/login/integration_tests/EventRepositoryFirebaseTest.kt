@@ -1,4 +1,4 @@
-package com.example.login
+package com.example.login.integration_tests
 
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4

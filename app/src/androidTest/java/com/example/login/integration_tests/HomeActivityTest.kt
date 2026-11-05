@@ -1,4 +1,4 @@
-package com.example.login
+package com.example.login.integration_tests
 
 import android.content.Intent
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -11,6 +11,8 @@ import androidx.test.espresso.intent.Intents.intended
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasFlags
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.login.HomeActivity
+import com.example.login.MainActivity
 import com.example.login.ui.viewmodel.HomeViewModel
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.After

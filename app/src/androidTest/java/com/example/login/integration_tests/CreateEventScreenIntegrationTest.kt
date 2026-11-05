@@ -1,4 +1,4 @@
-package com.example.login
+package com.example.login.integration_tests
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
