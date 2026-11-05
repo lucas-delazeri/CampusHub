@@ -5,7 +5,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
-    id("org.jetbrains.kotlinx.kover") version "0.9.1"
     id("jacoco")
 }
 val exclusions = listOf(
@@ -161,9 +160,17 @@ tasks.register<JacocoReport>("jacocoReport") {
         "com/example/login/ui/screens/**",
         "com/example/login/ui/components/**",
         "com/example/login/ui/theme/**",
-        "com/example/login/*Activity*.*",
-        "com/example/login/data/utils/*Recorder*.*",
-        "com/example/login/data/utils/*Player*.*",
-        "com/example/login/util/*Player*.*"
+        "com/example/login/*Activity*.*"
     )
+
+    val debugTree = fileTree("${project.layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+        exclude(fileFilter)
+    }
+    val mainSrc = "${project.projectDir}/src/main/java"
+
+    sourceDirectories.setFrom(files(mainSrc))
+    classDirectories.setFrom(files(debugTree))
+    executionData.setFrom(fileTree(project.layout.buildDirectory.get()) {
+        include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
+    })
 }

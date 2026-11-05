@@ -122,4 +122,38 @@ class ImageUtilsTest {
         verify(exactly = 0) { Bitmap.createScaledBitmap(any(), any(), any(), any()) }
         verify { originalBitmap.compress(Bitmap.CompressFormat.JPEG, 70, any()) }
     }
+
+    @Test
+    fun uriToBase64_whenImageRequiresSampleSizeCalculation_loopsAndDecodes() {
+        every { context.contentResolver.openInputStream(mockUri) } answers {
+            ByteArrayInputStream(byteArrayOf(1, 2, 3))
+        }
+
+        val originalBitmap = mockk<Bitmap>(relaxed = true)
+        every { originalBitmap.width } returns 4000
+        every { originalBitmap.height } returns 3000
+
+        val scaledBitmap = mockk<Bitmap>(relaxed = true)
+
+        every { BitmapFactory.decodeStream(any(), any(), any()) } answers {
+            val opts = arg<BitmapFactory.Options?>(2)
+            if (opts?.inJustDecodeBounds == true) {
+                opts.outWidth = 4000
+                opts.outHeight = 3000
+                null
+            } else {
+                originalBitmap
+            }
+        }
+
+        every {
+            Bitmap.createScaledBitmap(originalBitmap, 800, 600, true)
+        } returns scaledBitmap
+
+        every { Base64.encodeToString(any(), Base64.NO_WRAP) } returns "base64Sampled"
+
+        val result = ImageUtils.uriToBase64(context, mockUri, maxSize = 800, quality = 70)
+
+        assertEquals("base64Sampled", result)
+    }
 }

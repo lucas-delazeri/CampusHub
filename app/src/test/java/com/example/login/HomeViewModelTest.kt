@@ -337,4 +337,127 @@ class HomeViewModelTest {
 
         Assert.assertEquals("Avaliação salva com sucesso!", message)
     }
+
+    @Test
+    fun createEvent_blankDescription_isRejected() {
+        viewModel = HomeViewModel()
+        var message: String? = null
+        viewModel.createEvent("Título", "", "02/02/2000", "Local", "Cat") { message = it }
+        Assert.assertEquals("Preencha todos os campos obrigatórios.", message)
+        verify(exactly = 0) { EventRepository.createEvent(any()) }
+    }
+
+    @Test
+    fun createEvent_blankDate_isRejected() {
+        viewModel = HomeViewModel()
+        var message: String? = null
+        viewModel.createEvent("Título", "Desc", "", "Local", "Cat") { message = it }
+        Assert.assertEquals("Preencha todos os campos obrigatórios.", message)
+        verify(exactly = 0) { EventRepository.createEvent(any()) }
+    }
+
+    @Test
+    fun createEvent_blankLocation_isRejected() {
+        viewModel = HomeViewModel()
+        var message: String? = null
+        viewModel.createEvent("Título", "Desc", "02/02/2000", "", "Cat") { message = it }
+        Assert.assertEquals("Preencha todos os campos obrigatórios.", message)
+        verify(exactly = 0) { EventRepository.createEvent(any()) }
+    }
+
+    @Test
+    fun addComment_nullMessageFallbacks() {
+        val slotMessage = slot<(Boolean, String?) -> Unit>()
+        every {
+            EventRepository.addComment(1, "Text", null, null, null, null, capture(slotMessage))
+        } answers {
+            slotMessage.captured.invoke(true, null)
+        }
+
+        viewModel = HomeViewModel()
+        var messageSuccess: String? = null
+        viewModel.addComment(1, "Text", null, null, null, null) { messageSuccess = it }
+        Assert.assertEquals("Comentário adicionado!", messageSuccess)
+
+        every {
+            EventRepository.addComment(2, "Text2", null, null, null, null, capture(slotMessage))
+        } answers {
+            slotMessage.captured.invoke(false, null)
+        }
+        var messageError: String? = null
+        viewModel.addComment(2, "Text2", null, null, null, null) { messageError = it }
+        Assert.assertEquals("Erro ao adicionar comentário", messageError)
+    }
+
+    @Test
+    fun editComment_nullMessageFallbacks() {
+        val slotMessage = slot<(Boolean, String?) -> Unit>()
+        every {
+            EventRepository.editComment(1, "c1", "Text", null, null, null, null, capture(slotMessage))
+        } answers {
+            slotMessage.captured.invoke(true, null)
+        }
+
+        viewModel = HomeViewModel()
+        var messageSuccess: String? = null
+        viewModel.editComment(1, "c1", "Text", null, null, null, null) { messageSuccess = it }
+        Assert.assertEquals("Comentário atualizado!", messageSuccess)
+
+        every {
+            EventRepository.editComment(2, "c2", "Text2", null, null, null, null, capture(slotMessage))
+        } answers {
+            slotMessage.captured.invoke(false, null)
+        }
+        var messageError: String? = null
+        viewModel.editComment(2, "c2", "Text2", null, null, null, null) { messageError = it }
+        Assert.assertEquals("Erro ao editar", messageError)
+    }
+
+    @Test
+    fun deleteComment_nullMessageFallbacks() {
+        val slotMessage = slot<(Boolean, String?) -> Unit>()
+        every {
+            EventRepository.deleteComment(1, "c1", capture(slotMessage))
+        } answers {
+            slotMessage.captured.invoke(true, null)
+        }
+
+        viewModel = HomeViewModel()
+        var messageSuccess: String? = null
+        viewModel.deleteComment(1, "c1") { messageSuccess = it }
+        Assert.assertEquals("Comentário excluído!", messageSuccess)
+
+        every {
+            EventRepository.deleteComment(2, "c2", capture(slotMessage))
+        } answers {
+            slotMessage.captured.invoke(false, null)
+        }
+        var messageError: String? = null
+        viewModel.deleteComment(2, "c2") { messageError = it }
+        Assert.assertEquals("Erro ao excluir", messageError)
+    }
+
+    @Test
+    fun rateEvent_nullMessageFallbacks() {
+        val slotMessage = slot<(Boolean, String?) -> Unit>()
+        every {
+            EventRepository.rateEvent(1, 5, capture(slotMessage))
+        } answers {
+            slotMessage.captured.invoke(true, null)
+        }
+
+        viewModel = HomeViewModel()
+        var messageSuccess: String? = null
+        viewModel.rateEvent(1, 5) { messageSuccess = it }
+        Assert.assertEquals("Avaliação salva!", messageSuccess)
+
+        every {
+            EventRepository.rateEvent(2, 4, capture(slotMessage))
+        } answers {
+            slotMessage.captured.invoke(false, null)
+        }
+        var messageError: String? = null
+        viewModel.rateEvent(2, 4) { messageError = it }
+        Assert.assertEquals("Erro ao avaliar", messageError)
+    }
 }

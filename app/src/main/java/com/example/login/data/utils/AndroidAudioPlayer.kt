@@ -1,9 +1,8 @@
-package com.example.login.util
+package com.example.login.data.utils
+
 import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
-
-import kotlin.Unit;
 
 class AndroidAudioPlayer(
     private val context: Context

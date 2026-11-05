@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifyOrder
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
@@ -66,7 +67,18 @@ class AndroidAudioRecorderTest {
     }
 
     @Test
-    fun `if prepare fails, start is not called`() {
+    fun start_whenLegacySdk_usesDeprecatedConstructor() {
+        var receivedSdk = -1
+        val sut = AndroidAudioRecorder(context, sdkInt = 28) { _, sdk ->
+            receivedSdk = sdk
+            mediaRecorder
+        }
+        sut.start(tmp.newFile("legacy.m4a"))
+        assertEquals(28, receivedSdk)
+    }
+
+    @Test
+    fun prepareFails_startIsNotCalled() {
         every { mediaRecorder.prepare() } throws IOException("falha")
         val sut = AndroidAudioRecorder(context, recorderFactory = { _, _ -> mediaRecorder })
 
