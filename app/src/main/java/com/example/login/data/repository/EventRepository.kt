@@ -81,8 +81,7 @@ object EventRepository {
     var allEvents by mutableStateOf(defaultEventsList)
         private set
 
-    var userRole by mutableStateOf("aluno")
-        private set
+    var userRole by mutableStateOf("professor")
 
     fun loadUserRole() {
         val userId = auth.currentUser?.uid ?: return
@@ -90,7 +89,7 @@ object EventRepository {
             .get()
             .addOnSuccessListener { snapshot ->
                 if (snapshot.exists()) {
-                    userRole = snapshot.value as? String ?: "aluno"
+                    userRole = snapshot.value as? String ?: userRole
                 }
             }
     }
