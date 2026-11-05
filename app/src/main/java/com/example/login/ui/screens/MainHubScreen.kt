@@ -45,10 +45,12 @@ fun MainHubScreen(
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    if (selectedEvent != null || viewModel.isCreatingEvent) {
+                    if (selectedEvent != null || viewModel.isCreatingEvent || viewModel.editingEvent != null) {
                         IconButton(onClick = {
                             if (selectedEvent != null) {
                                 viewModel.selectedEvent = null
+                            } else if (viewModel.editingEvent != null) {
+                                viewModel.editingEvent = null
                             } else {
                                 viewModel.isCreatingEvent = false
                             }
@@ -64,6 +66,7 @@ fun MainHubScreen(
                 title = {
                     val title = when {
                         selectedEvent != null -> "Detalhes do Evento"
+                        viewModel.editingEvent != null -> "Editar Evento"
                         viewModel.isCreatingEvent -> "Novo Evento"
                         viewModel.currentTab == 0 -> "CampusHub"
                         viewModel.currentTab == 1 -> "Meus Eventos"
@@ -96,7 +99,7 @@ fun MainHubScreen(
             )
         },
         bottomBar = {
-            if (selectedEvent == null && !viewModel.isCreatingEvent) {
+            if (selectedEvent == null && !viewModel.isCreatingEvent && viewModel.editingEvent == null) {
                 NavigationBar(
                     containerColor = Color.White,
                     tonalElevation = 8.dp
@@ -156,6 +159,16 @@ fun MainHubScreen(
                     onBack = { viewModel.selectedEvent = null },
                     isEnrolled = viewModel.isEventEnrolled(selectedEvent.id),
                     currentUserId = viewModel.currentUserId,
+                    isTeacher = viewModel.isTeacher,
+                    onEditEvent = {
+                        viewModel.editingEvent = selectedEvent
+                        viewModel.selectedEvent = null
+                    },
+                    onEndEvent = {
+                        viewModel.endEvent(selectedEvent.id) { message ->
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     onToggleEnroll = {
                         viewModel.toggleEnrollment(selectedEvent) { message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -189,11 +202,25 @@ fun MainHubScreen(
                         }
                     }
                 )
+            } else if (viewModel.editingEvent != null) {
+                CreateEventScreen(
+                    eventToEdit = viewModel.editingEvent,
+                    onBack = { viewModel.editingEvent = null },
+                    onCreateEvent = { title, description, date, location, category, lat, lng, maxCapacity, imageBase64 ->
+                        val eventId = viewModel.editingEvent!!.id
+                        viewModel.updateEvent(eventId, title, description, date, location, category, lat, lng, maxCapacity, imageBase64) { message ->
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            if (message.contains("sucesso", ignoreCase = true)) {
+                                viewModel.editingEvent = null
+                            }
+                        }
+                    }
+                )
             } else if (viewModel.isCreatingEvent) {
                 CreateEventScreen(
                     onBack = { viewModel.isCreatingEvent = false },
-                    onCreateEvent = { title, description, date, location, category, lat, lng ->
-                        viewModel.createEvent(title, description, date, location, category, lat, lng) { message ->
+                    onCreateEvent = { title, description, date, location, category, lat, lng, maxCapacity, imageBase64 ->
+                        viewModel.createEvent(title, description, date, location, category, lat, lng, maxCapacity, imageBase64) { message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             if (message.contains("sucesso", ignoreCase = true)) {
                                 viewModel.isCreatingEvent = false

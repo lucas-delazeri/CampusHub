@@ -2,6 +2,7 @@ package com.example.login.ui.screens
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
@@ -10,6 +11,7 @@ import android.util.Base64
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -53,6 +55,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -70,6 +73,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -231,8 +235,11 @@ fun EventDetailScreen(
     event: Event,
     isEnrolled: Boolean,
     currentUserId: String?,
+    isTeacher: Boolean = false,
     onToggleEnroll: () -> Unit,
     onToggleFavorite: () -> Unit,
+    onEditEvent: (() -> Unit)? = null,
+    onEndEvent: (() -> Unit)? = null,
     onAddComment: (String, Int?, Uri?, Uri?, Uri?) -> Unit,
     onEditComment: (String, String, Int?, Uri?, Uri?, Uri?) -> Unit,
     onDeleteComment: (String) -> Unit,
@@ -339,6 +346,40 @@ fun EventDetailScreen(
             .padding(24.dp)
     ) {
 
+        if (!event.imageBase64.isNullOrBlank()) {
+            val imageBitmap = remember(event.imageBase64) {
+                try {
+                    val cleanB64 = if (event.imageBase64.contains(",")) {
+                        event.imageBase64.substringAfter(",")
+                    } else {
+                        event.imageBase64
+                    }
+                    val bytes = Base64.decode(cleanB64.trim(), Base64.DEFAULT)
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap()
+                } catch (_: Exception) {
+                    null
+                }
+            }
+            if (imageBitmap != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFF1F5F9)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        bitmap = imageBitmap,
+                        contentDescription = "Imagem do evento",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+
         Box(
             modifier = Modifier
                 .background(Color(0xFFE6F4FF), RoundedCornerShape(6.dp))
@@ -410,6 +451,15 @@ fun EventDetailScreen(
                         Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color(0xFF0F93FF))
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(text = event.location, fontSize = 15.sp, color = Color.Black, fontWeight = FontWeight.Medium)
+                    }
+                }
+
+                if (event.maxCapacity > 0) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF0F93FF))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(text = "Capacidade Máxima: ${event.maxCapacity} pessoas", fontSize = 15.sp, color = Color.Black, fontWeight = FontWeight.Medium)
                     }
                 }
 
@@ -513,6 +563,42 @@ fun EventDetailScreen(
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
+        }
+
+        if (isTeacher) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (onEditEvent != null) {
+                    OutlinedButton(
+                        onClick = onEditEvent,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFF0F93FF))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Editar", color = Color(0xFF0F93FF), fontWeight = FontWeight.Bold)
+                    }
+                }
+                if (!event.isEnded && onEndEvent != null) {
+                    Button(
+                        onClick = onEndEvent,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC3545))
+                    ) {
+                        Icon(Icons.Default.Stop, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Encerrar", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
