@@ -83,6 +83,27 @@ object EventRepository {
 
     var userRole by mutableStateOf("professor")
 
+    fun listenToEvents() {
+        db.child("events").addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val firebaseList = mutableListOf<Event>()
+                for (child in snapshot.children) {
+                    val event = child.getValue(Event::class.java)
+                    if (event != null && event.title.isNotBlank() && event.id > 0) {
+                        firebaseList.add(event)
+                    }
+                }
+                if (firebaseList.isNotEmpty()) {
+                    val firebaseIds = firebaseList.map { it.id }.toSet()
+                    val merged = defaultEventsList.filter { it.id !in firebaseIds } + firebaseList
+                    allEvents = merged.sortedBy { it.id }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
     fun loadUserRole() {
         val userId = auth.currentUser?.uid ?: return
         db.child("users").child(userId).child("role")

@@ -1,6 +1,5 @@
 package com.example.login.integration_tests
 
-import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.login.data.model.Event
 import com.example.login.data.repository.EventRepository
@@ -14,7 +13,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.UUID
@@ -23,33 +21,6 @@ import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class EventRepositoryFirebaseTest {
-
-    companion object {
-        private var isEmulator = false
-
-        @BeforeClass
-        @JvmStatic
-        fun setupEmulators() {
-            isEmulator = Build.FINGERPRINT.startsWith("generic") ||
-                    Build.FINGERPRINT.startsWith("unknown") ||
-                    Build.MODEL.contains("google_sdk") ||
-                    Build.MODEL.contains("Emulator") ||
-                    Build.MODEL.contains("Android SDK built for x86") ||
-                    Build.MANUFACTURER.contains("Genymotion") ||
-                    Build.HARDWARE.contains("goldfish") ||
-                    Build.HARDWARE.contains("ranchu")
-
-            if (isEmulator) {
-                val host = "192.168.3.9"
-
-                try {
-                    FirebaseAuth.getInstance().useEmulator(host, 9099)
-                    FirebaseDatabase.getInstance().useEmulator(host, 9000)
-                } catch (_: IllegalStateException) {
-                }
-            }
-        }
-    }
 
     private val auth = FirebaseAuth.getInstance()
     private val db: DatabaseReference = FirebaseDatabase.getInstance().reference
@@ -69,10 +40,8 @@ class EventRepositoryFirebaseTest {
 
     @After
     fun tearDown() {
-        if (isEmulator) {
-            EventRepository.clearLocalData()
-            auth.signOut()
-        }
+        EventRepository.clearLocalData()
+        auth.signOut()
     }
 
     private fun read(path: String): DataSnapshot =

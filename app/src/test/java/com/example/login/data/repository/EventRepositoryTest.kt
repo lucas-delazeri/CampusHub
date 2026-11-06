@@ -412,6 +412,16 @@ class EventRepositoryTest {
     }
 
     @Test
+    fun listenToEvents_attachesListener() {
+        val eventsRef = mockk<DatabaseReference>(relaxed = true)
+        every { mockDbRef.child("events") } returns eventsRef
+
+        EventRepository.listenToEvents()
+
+        verify { eventsRef.addValueEventListener(any()) }
+    }
+
+    @Test
     fun updateEvent_updatesEventInListAndDatabase() {
         val eventRef = mockk<DatabaseReference>(relaxed = true)
         every { mockDbRef.child("events").child("1") } returns eventRef

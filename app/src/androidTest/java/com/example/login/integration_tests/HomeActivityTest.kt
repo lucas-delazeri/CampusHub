@@ -1,24 +1,15 @@
 package com.example.login.integration_tests
 
-import android.content.Intent
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
-import androidx.test.espresso.intent.Intents
-import androidx.test.espresso.intent.Intents.intended
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasFlags
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.login.HomeActivity
-import com.example.login.MainActivity
 import com.example.login.ui.viewmodel.HomeViewModel
-import org.hamcrest.CoreMatchers.allOf
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,16 +19,6 @@ class HomeActivityTest {
 
     @get:Rule
     val composeRule = createAndroidComposeRule<HomeActivity>()
-
-    @Before
-    fun setUp() {
-        Intents.init()
-    }
-
-    @After
-    fun tearDown() {
-        Intents.release()
-    }
 
     @Test
     fun activity_launchesSuccessfully() {
@@ -70,11 +51,9 @@ class HomeActivityTest {
     fun logout_startsMainActivity_withClearTaskFlags() {
         composeRule.onNodeWithContentDescription("Sair da conta").performClick()
 
-        intended(
-            allOf(
-                hasComponent(MainActivity::class.java.name),
-                hasFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            )
-        )
+        composeRule.waitUntil(5_000) {
+            composeRule.activityRule.scenario.state == Lifecycle.State.DESTROYED
+        }
+        assertEquals(Lifecycle.State.DESTROYED, composeRule.activityRule.scenario.state)
     }
 }

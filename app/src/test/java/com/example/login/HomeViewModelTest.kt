@@ -49,6 +49,7 @@ class HomeViewModelTest {
         every { EventRepository.loadUserEnrollments() } just Runs
         every { EventRepository.loadUserFavoriteEvents() } just Runs
         every { EventRepository.loadUserRole() } just Runs
+        every { EventRepository.listenToEvents() } just Runs
         every { EventRepository.userRole } returns "professor"
         every { EventRepository.allEvents } returns listOf(sampleEvent(id = 5))
     }

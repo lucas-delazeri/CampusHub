@@ -185,9 +185,8 @@ fun MainHubScreen(
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     },
-                    onEditComment = { commentId, newContent, newRating, newAudioUri, newImageUri, newVideoUri ->
-                        val imageBase64 = newImageUri?.let { ImageUtils.uriToBase64(context, it) }
-                        viewModel.editComment(selectedEvent.id, commentId, newContent, newRating, newAudioUri, imageBase64, newVideoUri) { message ->
+                    onEditComment = { commentId, newContent, newRating, newAudioUri, newImageBase64, newVideoUri ->
+                        viewModel.editComment(selectedEvent.id, commentId, newContent, newRating, newAudioUri, newImageBase64, newVideoUri) { message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     },

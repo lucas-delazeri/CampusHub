@@ -1,5 +1,7 @@
 package com.example.login.ui.screens
 
+import com.example.login.data.utils.ImageUtils
+
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
@@ -241,7 +243,7 @@ fun EventDetailScreen(
     onEditEvent: (() -> Unit)? = null,
     onEndEvent: (() -> Unit)? = null,
     onAddComment: (String, Int?, Uri?, Uri?, Uri?) -> Unit,
-    onEditComment: (String, String, Int?, Uri?, Uri?, Uri?) -> Unit,
+    onEditComment: (commentId: String, newContent: String, newRating: Int?, newAudioUri: Uri?, newImageBase64: String?, newVideoUri: Uri?) -> Unit,
     onDeleteComment: (String) -> Unit,
     onRateEvent: (Int) -> Unit,
     onBack: () -> Unit,
@@ -253,7 +255,8 @@ fun EventDetailScreen(
     var editText by remember { mutableStateOf("") }
     var editRating by remember { mutableIntStateOf(0) }
     var editAudioUri by remember { mutableStateOf<Uri?>(null) }
-    var editImage by remember { mutableStateOf<Uri?>(null) }
+    var editImageUri by remember { mutableStateOf<Uri?>(null) }
+    var existingImageBase64 by remember { mutableStateOf<String?>(null) }
     var editVideo by remember { mutableStateOf<Uri?>(null) }
     var commentToDelete by remember { mutableStateOf<Comment?>(null) }
 
@@ -304,6 +307,15 @@ fun EventDetailScreen(
     ) { uri ->
         if (uri != null) {
             videoUri = uri
+        }
+    }
+
+    val pickEditImageLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            editImageUri = uri
+            existingImageBase64 = null
         }
     }
 
@@ -956,8 +968,9 @@ fun EventDetailScreen(
                                                 editText = comment.content
                                                 editRating = comment.rating ?: 0
                                                 editAudioUri = comment.audioUri?.let { Uri.parse(it) }
-                                                editImage = comment.imageBase64?.let { Uri.parse(it) }
                                                 editVideo = comment.videoUrl?.let { Uri.parse(it) }
+                                                editImageUri = null
+                                                existingImageBase64 = comment.imageBase64
                                             },
                                             modifier = Modifier.size(28.dp)
                                         ) {
@@ -1136,7 +1149,7 @@ fun EventDetailScreen(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    editImage?.let { _ ->
+                    if (editImageUri != null || !existingImageBase64.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
                             modifier = Modifier
@@ -1147,12 +1160,15 @@ fun EventDetailScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Imagem anexada",
+                                text = if (editImageUri != null) "Nova imagem selecionada" else "Imagem mantida",
                                 fontSize = 13.sp,
                                 color = Color(0xFF0F93FF),
                                 fontWeight = FontWeight.Medium
                             )
-                            IconButton(onClick = { editImage = null }) {
+                            IconButton(onClick = {
+                                editImageUri = null
+                                existingImageBase64 = null
+                            }) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Remover imagem",
@@ -1161,6 +1177,27 @@ fun EventDetailScreen(
                                 )
                             }
                         }
+                    }
+
+                    OutlinedButton(
+                        onClick = { pickEditImageLauncher.launch("image/*") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = null,
+                            tint = Color(0xFF0F93FF),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (editImageUri != null || !existingImageBase64.isNullOrBlank()) "Alterar Imagem" else "Adicionar Imagem",
+                            fontSize = 12.sp,
+                            color = Color(0xFF0F93FF)
+                        )
                     }
 
                     editVideo?.let { _ ->
@@ -1221,12 +1258,18 @@ fun EventDetailScreen(
                     onClick = {
                         val comment = commentToEdit
                         if (comment != null && editText.isNotBlank()) {
+                            val finalBase64 = if (editImageUri != null) {
+                                ImageUtils.uriToBase64(context, editImageUri!!)
+                            } else {
+                                existingImageBase64
+                            }
+
                             onEditComment(
                                 comment.id,
                                 editText,
                                 if (editRating > 0) editRating else null,
                                 editAudioUri,
-                                editImage,
+                                finalBase64,
                                 editVideo
                             )
                         }

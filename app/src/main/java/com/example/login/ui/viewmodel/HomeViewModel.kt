@@ -25,6 +25,7 @@ class HomeViewModel : ViewModel() {
         EventRepository.loadUserEnrollments()
         EventRepository.loadUserFavoriteEvents()
         EventRepository.loadUserRole()
+        EventRepository.listenToEvents()
     }
 
     val userRole: String
