@@ -156,4 +156,25 @@ class ImageUtilsTest {
 
         assertEquals("base64Sampled", result)
     }
+
+    @Test
+    fun uriToBase64_whenSecondInputStreamReturnsNull_returnsNull() {
+        var count = 0
+        every { context.contentResolver.openInputStream(mockUri) } answers {
+            count++
+            if (count == 1) ByteArrayInputStream(byteArrayOf(1, 2, 3)) else null
+        }
+
+        every { BitmapFactory.decodeStream(any(), any(), any()) } answers {
+            val opts = arg<BitmapFactory.Options?>(2)
+            if (opts?.inJustDecodeBounds == true) {
+                opts.outWidth = 100
+                opts.outHeight = 100
+            }
+            null
+        }
+
+        val result = ImageUtils.uriToBase64(context, mockUri)
+        assertNull(result)
+    }
 }

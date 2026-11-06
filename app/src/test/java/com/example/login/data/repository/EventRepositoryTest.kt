@@ -410,4 +410,27 @@ class EventRepositoryTest {
         EventRepository.removeRatingsListener(1, listener)
         verify { ratingsRef.removeEventListener(listener) }
     }
+
+    @Test
+    fun updateEvent_updatesEventInListAndDatabase() {
+        val eventRef = mockk<DatabaseReference>(relaxed = true)
+        every { mockDbRef.child("events").child("1") } returns eventRef
+
+        val updated = Event(id = 1, title = "Título Atualizado", description = "Nova Desc", category = "Geral")
+        EventRepository.updateEvent(updated)
+
+        Assert.assertTrue(EventRepository.allEvents.any { it.id == 1 && it.title == "Título Atualizado" })
+        verify { eventRef.setValue(updated) }
+    }
+
+    @Test
+    fun endEvent_marksEventAsEndedInListAndDatabase() {
+        val endedRef = mockk<DatabaseReference>(relaxed = true)
+        every { mockDbRef.child("events").child("3").child("isEnded") } returns endedRef
+
+        EventRepository.endEvent(3)
+
+        Assert.assertTrue(EventRepository.allEvents.first { it.id == 3 }.isEnded)
+        verify { endedRef.setValue(true) }
+    }
 }

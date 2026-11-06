@@ -460,4 +460,86 @@ class HomeViewModelTest {
         viewModel.rateEvent(2, 4) { messageError = it }
         Assert.assertEquals("Erro ao avaliar", messageError)
     }
+
+    @Test
+    fun updateEvent_teacher_updatesEventSuccessfully() {
+        every { EventRepository.userRole } returns "professor"
+        every { EventRepository.updateEvent(any()) } just Runs
+        every { EventRepository.allEvents } returns listOf(sampleEvent(id = 5))
+
+        viewModel = HomeViewModel()
+        viewModel.selectedEvent = sampleEvent(id = 5)
+        var message: String? = null
+
+        viewModel.updateEvent(5, "Título Novo", "Desc Nova", "03/03/2026", "Local Novo", "Geral", 10.0, 20.0, 50, "img") { message = it }
+
+        Assert.assertEquals("Evento atualizado com sucesso!", message)
+        verify { EventRepository.updateEvent(any()) }
+        Assert.assertEquals("Título Novo", viewModel.selectedEvent?.title)
+    }
+
+    @Test
+    fun updateEvent_nonTeacher_isRejected() {
+        every { EventRepository.userRole } returns "aluno"
+        viewModel = HomeViewModel()
+        var message: String? = null
+
+        viewModel.updateEvent(5, "t", "d", "01/01", "l", "c") { message = it }
+
+        Assert.assertEquals("Apenas professores podem editar eventos.", message)
+        verify(exactly = 0) { EventRepository.updateEvent(any()) }
+    }
+
+    @Test
+    fun updateEvent_blankFields_isRejected() {
+        every { EventRepository.userRole } returns "professor"
+        viewModel = HomeViewModel()
+        var message: String? = null
+
+        viewModel.updateEvent(5, "", "d", "01/01", "l", "c") { message = it }
+
+        Assert.assertEquals("Preencha todos os campos obrigatórios.", message)
+        verify(exactly = 0) { EventRepository.updateEvent(any()) }
+    }
+
+    @Test
+    fun updateEvent_notFound_isRejected() {
+        every { EventRepository.userRole } returns "professor"
+        every { EventRepository.allEvents } returns emptyList()
+        viewModel = HomeViewModel()
+        var message: String? = null
+
+        viewModel.updateEvent(99, "t", "d", "01/01", "l", "c") { message = it }
+
+        Assert.assertEquals("Evento não encontrado.", message)
+        verify(exactly = 0) { EventRepository.updateEvent(any()) }
+    }
+
+    @Test
+    fun endEvent_teacher_endsEventSuccessfully() {
+        every { EventRepository.userRole } returns "professor"
+        every { EventRepository.endEvent(5) } just Runs
+
+        viewModel = HomeViewModel()
+        viewModel.selectedEvent = sampleEvent(id = 5, isEnded = false)
+        var message: String? = null
+
+        viewModel.endEvent(5) { message = it }
+
+        Assert.assertEquals("Evento encerrado com sucesso!", message)
+        verify { EventRepository.endEvent(5) }
+        Assert.assertTrue(viewModel.selectedEvent?.isEnded == true)
+    }
+
+    @Test
+    fun endEvent_nonTeacher_isRejected() {
+        every { EventRepository.userRole } returns "aluno"
+        viewModel = HomeViewModel()
+        var message: String? = null
+
+        viewModel.endEvent(5) { message = it }
+
+        Assert.assertEquals("Apenas professores podem encerrar eventos.", message)
+        verify(exactly = 0) { EventRepository.endEvent(any()) }
+    }
 }

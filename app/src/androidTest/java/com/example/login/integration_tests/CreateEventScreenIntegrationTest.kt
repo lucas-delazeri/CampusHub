@@ -2,7 +2,6 @@ package com.example.login.integration_tests
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -39,7 +38,7 @@ class CreateEventScreenIntegrationTest {
         composeTestRule.setContent {
             CreateEventScreen(
                 onBack = {},
-                onCreateEvent = { title, description, date, location, category, lat, lng, maxCapacity, imageBase64, is_ended ->
+                onCreateEvent = { title, description, date, location, category, lat, lng, maxCapacity, imageBase64, isEndedParam ->
                     submittedTitle = title
                     submittedDescription = description
                     submittedDate = date
@@ -49,7 +48,7 @@ class CreateEventScreenIntegrationTest {
                     submittedLng = lng
                     submittedMaxCapacity = maxCapacity
                     imgCode = imageBase64
-                    isEnded = is_ended
+                    isEnded = isEndedParam
                 }
             )
         }
