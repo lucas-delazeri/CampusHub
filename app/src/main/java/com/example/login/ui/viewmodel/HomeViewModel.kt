@@ -43,6 +43,7 @@ class HomeViewModel : ViewModel() {
         lng: Double? = null,
         maxCapacity: Int = 0,
         imageBase64: String? = null,
+        isEnded: Boolean = false,
         onResultMessage: (String) -> Unit
     ) {
         if (!isTeacher) {
@@ -62,7 +63,7 @@ class HomeViewModel : ViewModel() {
             location = location,
             organizer = userName,
             category = if (category.isBlank()) "Geral" else category,
-            isEnded = false,
+            isEnded = isEnded,
             latitude = lat ?: -23.550520,
             longitude = lng ?: -46.633308,
             maxCapacity = maxCapacity,
@@ -83,6 +84,7 @@ class HomeViewModel : ViewModel() {
         lng: Double? = null,
         maxCapacity: Int = 0,
         imageBase64: String? = null,
+        isEnded: Boolean = false,
         onResultMessage: (String) -> Unit
     ) {
         if (!isTeacher) {
@@ -106,7 +108,8 @@ class HomeViewModel : ViewModel() {
             latitude = lat ?: currentEvent.latitude,
             longitude = lng ?: currentEvent.longitude,
             maxCapacity = maxCapacity,
-            imageBase64 = imageBase64 ?: currentEvent.imageBase64
+            imageBase64 = imageBase64 ?: currentEvent.imageBase64,
+            isEnded = isEnded
         )
         EventRepository.updateEvent(updated)
         if (selectedEvent?.id == eventId) {

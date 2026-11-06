@@ -206,9 +206,9 @@ fun MainHubScreen(
                 CreateEventScreen(
                     eventToEdit = viewModel.editingEvent,
                     onBack = { viewModel.editingEvent = null },
-                    onCreateEvent = { title, description, date, location, category, lat, lng, maxCapacity, imageBase64 ->
+                    onCreateEvent = { title, description, date, location, category, lat, lng, maxCapacity, imageBase64, isEnded ->
                         val eventId = viewModel.editingEvent!!.id
-                        viewModel.updateEvent(eventId, title, description, date, location, category, lat, lng, maxCapacity, imageBase64) { message ->
+                        viewModel.updateEvent(eventId, title, description, date, location, category, lat, lng, maxCapacity, imageBase64, isEnded) { message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             if (message.contains("sucesso", ignoreCase = true)) {
                                 viewModel.editingEvent = null
@@ -219,8 +219,8 @@ fun MainHubScreen(
             } else if (viewModel.isCreatingEvent) {
                 CreateEventScreen(
                     onBack = { viewModel.isCreatingEvent = false },
-                    onCreateEvent = { title, description, date, location, category, lat, lng, maxCapacity, imageBase64 ->
-                        viewModel.createEvent(title, description, date, location, category, lat, lng, maxCapacity, imageBase64) { message ->
+                    onCreateEvent = { title, description, date, location, category, lat, lng, maxCapacity, imageBase64, isEnded ->
+                        viewModel.createEvent(title, description, date, location, category, lat, lng, maxCapacity, imageBase64, isEnded) { message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             if (message.contains("sucesso", ignoreCase = true)) {
                                 viewModel.isCreatingEvent = false

@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,6 +40,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -65,7 +68,7 @@ import com.example.login.ui.components.MapsActivity
 fun CreateEventScreen(
     onBack: () -> Unit,
     eventToEdit: Event? = null,
-    onCreateEvent: (title: String, description: String, date: String, location: String, category: String, lat: Double?, lng: Double?, maxCapacity: Int, imageBase64: String?) -> Unit
+    onCreateEvent: (title: String, description: String, date: String, location: String, category: String, lat: Double?, lng: Double?, maxCapacity: Int, imageBase64: String?, isEnded: Boolean) -> Unit
 ) {
     val context = LocalContext.current
     var title by remember { mutableStateOf(eventToEdit?.title ?: "") }
@@ -78,6 +81,7 @@ fun CreateEventScreen(
     var maxCapacity by remember { mutableStateOf(if ((eventToEdit?.maxCapacity ?: 0) > 0) eventToEdit!!.maxCapacity.toString() else "") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var imageBase64 by remember { mutableStateOf<String?>(eventToEdit?.imageBase64) }
+    var isEnded by remember { mutableStateOf(eventToEdit?.isEnded ?: false) }
 
     val isEditMode = eventToEdit != null
 
@@ -319,6 +323,36 @@ fun CreateEventScreen(
                     minLines = 4
                 )
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Status do Evento",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        Text(
+                            text = if (isEnded) "Encerrado (Inscrições Fechadas)" else "Ativo (Inscrições Abertas)",
+                            fontSize = 12.sp,
+                            color = if (isEnded) Color(0xFFDC3545) else Color(0xFF0F93FF)
+                        )
+                    }
+                    Switch(
+                        checked = isEnded,
+                        onCheckedChange = { isEnded = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Color(0xFFDC3545),
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color(0xFF0F93FF)
+                        )
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
@@ -327,7 +361,8 @@ fun CreateEventScreen(
                             title, description, date, location, category,
                             selectedLat, selectedLng,
                             maxCapacity.toIntOrNull() ?: 0,
-                            imageBase64
+                            imageBase64,
+                            isEnded
                         )
                     },
                     modifier = Modifier
