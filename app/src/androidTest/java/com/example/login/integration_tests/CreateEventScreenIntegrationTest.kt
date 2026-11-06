@@ -29,11 +29,13 @@ class CreateEventScreenIntegrationTest {
         var submittedDescription = ""
         var submittedLat: Double? = 0.0
         var submittedLng: Double? = 0.0
+        var submittedMaxParticipants = -1
+        var submittedImage: String? = "placeholder"
 
         composeTestRule.setContent {
             CreateEventScreen(
                 onBack = {},
-                onCreateEvent = { title, description, date, location, category, lat, lng ->
+                onCreateEvent = { title, description, date, location, category, lat, lng, maxParticipants, image ->
                     submittedTitle = title
                     submittedDescription = description
                     submittedDate = date
@@ -41,6 +43,8 @@ class CreateEventScreenIntegrationTest {
                     submittedCategory = category
                     submittedLat = lat
                     submittedLng = lng
+                    submittedMaxParticipants = maxParticipants
+                    submittedImage = image
                 }
             )
         }
@@ -76,5 +80,6 @@ class CreateEventScreenIntegrationTest {
         assertEquals("Evento de teste de integração", submittedDescription)
         assertNull(submittedLat)
         assertNull(submittedLng)
+        assertNull(submittedImage)
     }
 }
