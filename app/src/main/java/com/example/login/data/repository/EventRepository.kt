@@ -256,6 +256,30 @@ object EventRepository {
         return event.pendingConfirmationUserIds.contains(userId)
     }
 
+    fun performCheckIn(eventId: Int, targetUserId: String): String {
+        val event = allEvents.find { it.id == eventId } ?: return "Evento não encontrado."
+
+        if (event.checkedInUserIds.contains(targetUserId)) {
+            return "Atenção: Presença de '$targetUserId' já foi registrada anteriormente!"
+        }
+
+        val newCheckedIn = event.checkedInUserIds + targetUserId
+        val updated = event.copy(checkedInUserIds = newCheckedIn)
+        updateEvent(updated)
+        return "Check-in realizado com sucesso! Presença de '$targetUserId' confirmada."
+    }
+
+    fun performCheckInFromPayload(payload: String): String {
+        val parsed = com.example.login.data.utils.QrCodeUtils.parseCheckInPayload(payload)
+            ?: return "Código QR inválido ou formato não reconhecido."
+        return performCheckIn(parsed.first, parsed.second)
+    }
+
+    fun isUserCheckedIn(eventId: Int, userId: String): Boolean {
+        val event = allEvents.find { it.id == eventId } ?: return false
+        return event.checkedInUserIds.contains(userId)
+    }
+
     fun enroll(eventId: Int) {
         val userId = auth.currentUser?.uid ?: "user_id"
         enrollUser(eventId, userId)

@@ -1,7 +1,15 @@
 package com.example.login.ui.screens
 
 import com.example.login.data.utils.ImageUtils
+import com.example.login.data.utils.QrCodeUtils
 import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.FactCheck
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.text.style.TextAlign
 
 import android.content.Context
 import android.content.Intent
@@ -242,6 +250,7 @@ fun EventDetailScreen(
     onToggleEnroll: () -> Unit,
     onConfirmSpot: (() -> Unit)? = null,
     onDeclineSpot: (() -> Unit)? = null,
+    onPerformCheckIn: ((String) -> Unit)? = null,
     onToggleFavorite: () -> Unit,
     onEditEvent: (() -> Unit)? = null,
     onEndEvent: (() -> Unit)? = null,
@@ -271,6 +280,11 @@ fun EventDetailScreen(
 
     var videoUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     var tempVideoUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+
+    var showStudentQrModal by remember { mutableStateOf(false) }
+    var showOrganizerCheckInModal by remember { mutableStateOf(false) }
+    var selectedStudentQrToShow by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var checkInSearchQuery by remember { mutableStateOf("") }
 
     val takePictureLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
@@ -696,6 +710,56 @@ fun EventDetailScreen(
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
+        }
+
+        if (isEnrolled) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = { showStudentQrModal = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F93FF))
+            ) {
+                Icon(
+                    imageVector = Icons.Default.QrCode,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Meu QR Code de Check-in",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+        }
+
+        if (isTeacher) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = { showOrganizerCheckInModal = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FactCheck,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Lista de Presença & QR Codes",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
         }
 
         if (isTeacher) {
@@ -1429,6 +1493,236 @@ fun EventDetailScreen(
             dismissButton = {
                 TextButton(onClick = { commentToDelete = null }) {
                     Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showStudentQrModal) {
+        val studentId = currentUserId ?: "aluno"
+        val qrPayload = QrCodeUtils.getCheckInPayload(event.id, studentId)
+        val qrBitmap = remember(qrPayload) { QrCodeUtils.generateQrCodeBitmap(qrPayload, 600) }
+        val isCheckedIn = event.isUserCheckedIn(studentId)
+
+        AlertDialog(
+            containerColor = Color.White,
+            onDismissRequest = { showStudentQrModal = false },
+            title = {
+                Text(
+                    text = "Meu QR Code de Check-in",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F93FF)
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (qrBitmap != null) {
+                        Image(
+                            bitmap = qrBitmap.asImageBitmap(),
+                            contentDescription = "QR Code de Check-in",
+                            modifier = Modifier.size(240.dp)
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                if (isCheckedIn) Color(0xFFE8F5E9) else Color(0xFFFFF3E0),
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = if (isCheckedIn) "✓ Presença Confirmada (Checked-in)" else "Aguardando Check-in pelo Organizador",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isCheckedIn) Color(0xFF2E7D32) else Color(0xFFE65100)
+                        )
+                    }
+                    Text(
+                        text = "Apresente este QR Code ao organizador na entrada do evento para validar sua presença.",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showStudentQrModal = false }) {
+                    Text("Fechar")
+                }
+            }
+        )
+    }
+
+    if (showOrganizerCheckInModal) {
+        val allEnrolledAndPending = (event.enrolledUserIds + event.pendingConfirmationUserIds).distinct()
+        val filteredStudents = allEnrolledAndPending.filter { studentId ->
+            checkInSearchQuery.isBlank() || studentId.contains(checkInSearchQuery, ignoreCase = true)
+        }
+
+        AlertDialog(
+            containerColor = Color.White,
+            onDismissRequest = { showOrganizerCheckInModal = false },
+            title = {
+                Column {
+                    Text(
+                        text = "Lista de Presença & Check-in",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color(0xFF0F93FF)
+                    )
+                    Text(
+                        text = "Presenças Registradas: ${event.checkedInCount} / ${event.currentEnrolledCount} inscritos",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 380.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = checkInSearchQuery,
+                        onValueChange = { checkInSearchQuery = it },
+                        placeholder = { Text("Pesquisar aluno...") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    if (filteredStudents.isEmpty()) {
+                        Text(
+                            text = "Nenhum aluno inscrito encontrado.",
+                            fontSize = 13.sp,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                    } else {
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(filteredStudents) { studentId ->
+                                val isCheckedIn = event.isUserCheckedIn(studentId)
+                                val isPendingSpot = event.pendingConfirmationUserIds.contains(studentId)
+                                val qrPayload = QrCodeUtils.getCheckInPayload(event.id, studentId)
+
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isCheckedIn) Color(0xFFF1F8E9) else Color(0xFFF8FAFC)
+                                    )
+                                ) {
+                                    Column(modifier = Modifier.padding(10.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = studentId,
+                                                    fontSize = 14.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.Black
+                                                )
+                                                Text(
+                                                    text = when {
+                                                        isCheckedIn -> "Presença Confirmada"
+                                                        isPendingSpot -> "Vaga Pendente de Confirmação"
+                                                        else -> "Presença Pendente"
+                                                    },
+                                                    fontSize = 11.sp,
+                                                    color = when {
+                                                        isCheckedIn -> Color(0xFF2E7D32)
+                                                        isPendingSpot -> Color(0xFFE65100)
+                                                        else -> Color.Gray
+                                                    }
+                                                )
+                                            }
+
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                IconButton(
+                                                    onClick = { selectedStudentQrToShow = Pair(studentId, qrPayload) }
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.QrCode,
+                                                        contentDescription = "Ver QR Code",
+                                                        tint = Color(0xFF0F93FF)
+                                                    )
+                                                }
+
+                                                Button(
+                                                    onClick = {
+                                                        if (isCheckedIn) {
+                                                            Toast.makeText(context, "Atenção: Presença de '$studentId' JÁ foi registrada anteriormente!", Toast.LENGTH_SHORT).show()
+                                                        } else {
+                                                            onPerformCheckIn?.invoke(studentId)
+                                                        }
+                                                    },
+                                                    colors = ButtonDefaults.buttonColors(
+                                                        containerColor = if (isCheckedIn) Color(0xFF81C784) else Color(0xFF2E7D32)
+                                                    ),
+                                                    shape = RoundedCornerShape(6.dp)
+                                                ) {
+                                                    Text(
+                                                        text = if (isCheckedIn) "Validado" else "Check-in",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showOrganizerCheckInModal = false }) {
+                    Text("Concluir")
+                }
+            }
+        )
+    }
+
+    if (selectedStudentQrToShow != null) {
+        val (studentId, qrPayload) = selectedStudentQrToShow!!
+        val qrBitmap = remember(qrPayload) { QrCodeUtils.generateQrCodeBitmap(qrPayload, 600) }
+
+        AlertDialog(
+            containerColor = Color.White,
+            onDismissRequest = { selectedStudentQrToShow = null },
+            title = { Text("QR Code de $studentId", fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (qrBitmap != null) {
+                        Image(
+                            bitmap = qrBitmap.asImageBitmap(),
+                            contentDescription = "QR Code do Aluno",
+                            modifier = Modifier.size(240.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { selectedStudentQrToShow = null }) {
+                    Text("Fechar")
                 }
             }
         )

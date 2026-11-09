@@ -184,6 +184,11 @@ fun MainHubScreen(
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     },
+                    onPerformCheckIn = { targetUserId ->
+                        viewModel.performCheckIn(selectedEvent.id, targetUserId) { message ->
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     onToggleFavorite = {
                         viewModel.toggleFavorite(selectedEvent) { message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()

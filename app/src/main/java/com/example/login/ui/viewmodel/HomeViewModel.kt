@@ -173,6 +173,28 @@ class HomeViewModel : ViewModel() {
         onResultMessage(message)
     }
 
+    fun performCheckIn(eventId: Int, targetUserId: String, onResultMessage: (String) -> Unit) {
+        val message = EventRepository.performCheckIn(eventId, targetUserId)
+        if (selectedEvent?.id == eventId) {
+            selectedEvent = EventRepository.allEvents.find { it.id == eventId } ?: selectedEvent
+        }
+        onResultMessage(message)
+    }
+
+    fun performCheckInFromPayload(payload: String, onResultMessage: (String) -> Unit) {
+        val message = EventRepository.performCheckInFromPayload(payload)
+        val parsed = com.example.login.data.utils.QrCodeUtils.parseCheckInPayload(payload)
+        if (parsed != null && selectedEvent?.id == parsed.first) {
+            selectedEvent = EventRepository.allEvents.find { it.id == parsed.first } ?: selectedEvent
+        }
+        onResultMessage(message)
+    }
+
+    fun isUserCheckedIn(eventId: Int, userId: String? = null): Boolean {
+        val targetUserId = userId ?: auth.currentUser?.uid ?: email
+        return EventRepository.isUserCheckedIn(eventId, targetUserId)
+    }
+
     fun toggleEnrollment(event: Event, onResultMessage: (String) -> Unit) {
         if (event.isEnded) {
             onResultMessage("Este evento já encerrou. Ações de inscrição estão desativadas.")
