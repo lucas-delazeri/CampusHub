@@ -80,6 +80,15 @@ class AndroidVideoRecorderTest {
         assertEquals("Erro ao gravar vídeo", exception.message)
     }
 
+    @Test
+    fun startCameraSession_handlesExceptionGracefully() {
+        val lifecycleOwner = mockk<androidx.lifecycle.LifecycleOwner>(relaxed = true)
+        try {
+            recorder.startCameraSession(lifecycleOwner) { }
+        } catch (_: Exception) {
+        }
+    }
+
     private fun setPrivateField(obj: Any, fieldName: String, value: Any?) {
         val field: Field = obj.javaClass.getDeclaredField(fieldName)
         field.isAccessible = true

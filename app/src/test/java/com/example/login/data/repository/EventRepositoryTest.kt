@@ -121,13 +121,27 @@ class EventRepositoryTest {
 
     @Test
     fun enrollment_togglesCorrectly() {
-        Assert.assertFalse(EventRepository.isEnrolled(1))
+        val user = mockk<FirebaseUser>()
+        every { user.uid } returns "u123"
+        every { mockAuth.currentUser } returns user
 
-        EventRepository.enroll(1)
-        Assert.assertTrue(EventRepository.isEnrolled(1))
+        val userRef = mockk<DatabaseReference>(relaxed = true)
+        val voidTask = mockk<Task<Void>>(relaxed = true)
+        every { voidTask.addOnSuccessListener(any()) } returns voidTask
+        every { userRef.setValue(any()) } returns voidTask
+        every { mockDbRef.child("users").child("u123").child("enrolledEvents") } returns userRef
+        every { mockDbRef.child("events").child(any()) } returns userRef
 
-        EventRepository.unenroll(1)
-        Assert.assertFalse(EventRepository.isEnrolled(1))
+        val event = Event(id = 200, title = "Test Event", maxCapacity = 50)
+        EventRepository.createEvent(event)
+
+        Assert.assertFalse(EventRepository.isEnrolled(200))
+
+        EventRepository.enroll(200)
+        Assert.assertTrue(EventRepository.isEnrolled(200))
+
+        EventRepository.unenroll(200)
+        Assert.assertFalse(EventRepository.isEnrolled(200))
     }
 
     @Test
@@ -419,6 +433,57 @@ class EventRepositoryTest {
         EventRepository.listenToEvents()
 
         verify { eventsRef.addValueEventListener(any()) }
+    }
+
+    @Test
+    fun enrollUser_whenEventIsFull_joinsWaitlist() {
+        val user = mockk<FirebaseUser>()
+        every { user.uid } returns "u99"
+        every { mockAuth.currentUser } returns user
+
+        val eventRef = mockk<DatabaseReference>(relaxed = true)
+        every { mockDbRef.child("events").child(any()) } returns eventRef
+
+        val fullEvent = Event(id = 10, title = "Full Event", maxCapacity = 1, enrolledUserIds = listOf("u1"))
+        EventRepository.createEvent(fullEvent)
+
+        val result = EventRepository.enrollUser(10, "u99")
+
+        Assert.assertTrue(result.contains("Lista de Espera"))
+        Assert.assertTrue(EventRepository.isOnWaitlist(10, "u99"))
+        Assert.assertEquals(1, EventRepository.getWaitlistPosition(10, "u99"))
+    }
+
+    @Test
+    fun enrollUser_whenUnenrolling_promotesNextInWaitlist() {
+        val user = mockk<FirebaseUser>()
+        every { user.uid } returns "u1"
+        every { mockAuth.currentUser } returns user
+
+        val eventRef = mockk<DatabaseReference>(relaxed = true)
+        every { mockDbRef.child("events").child(any()) } returns eventRef
+
+        val fullEvent = Event(
+            id = 20,
+            title = "Full Event",
+            maxCapacity = 1,
+            enrolledUserIds = listOf("u1"),
+            waitlistUserIds = listOf("u2")
+        )
+        EventRepository.createEvent(fullEvent)
+
+        val result = EventRepository.enrollUser(20, "u1")
+
+        Assert.assertTrue(result.contains("Inscrição cancelada com sucesso"))
+        val updatedEvent = EventRepository.allEvents.first { it.id == 20 }
+        Assert.assertTrue(updatedEvent.pendingConfirmationUserIds.contains("u2"))
+        Assert.assertTrue(updatedEvent.waitlistUserIds.isEmpty())
+
+        // Confirm spot
+        val confirmResult = EventRepository.confirmPendingSpot(20, "u2")
+        Assert.assertTrue(confirmResult.contains("Inscrição confirmada"))
+        val finalEvent = EventRepository.allEvents.first { it.id == 20 }
+        Assert.assertTrue(finalEvent.enrolledUserIds.contains("u2"))
     }
 
     @Test

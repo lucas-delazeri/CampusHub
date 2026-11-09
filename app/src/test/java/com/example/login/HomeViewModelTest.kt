@@ -188,27 +188,27 @@ class HomeViewModelTest {
     @Test
     fun toggleEnrollment_notEnrolled_enrolls() {
         every { EventRepository.isEnrolled(1) } returns false
-        every { EventRepository.enroll(1) } just Runs
+        every { EventRepository.enrollUser(1, any()) } returns "Inscrição realizada com sucesso!"
         viewModel = HomeViewModel()
         var message: String? = null
 
-        viewModel.toggleEnrollment(sampleEvent()) { message = it }
+        viewModel.toggleEnrollment(sampleEvent(id = 1)) { message = it }
 
         Assert.assertEquals("Inscrição realizada com sucesso!", message)
-        verify { EventRepository.enroll(1) }
+        verify { EventRepository.enrollUser(1, any()) }
     }
 
     @Test
     fun toggleEnrollment_alreadyEnrolled_unenrolls() {
         every { EventRepository.isEnrolled(1) } returns true
-        every { EventRepository.unenroll(1) } just Runs
+        every { EventRepository.enrollUser(1, any()) } returns "Inscrição cancelada com sucesso!"
         viewModel = HomeViewModel()
         var message: String? = null
 
-        viewModel.toggleEnrollment(sampleEvent()) { message = it }
+        viewModel.toggleEnrollment(sampleEvent(id = 1)) { message = it }
 
         Assert.assertEquals("Inscrição cancelada com sucesso!", message)
-        verify { EventRepository.unenroll(1) }
+        verify { EventRepository.enrollUser(1, any()) }
     }
 
     @Test
@@ -542,5 +542,64 @@ class HomeViewModelTest {
 
         Assert.assertEquals("Apenas professores podem encerrar eventos.", message)
         verify(exactly = 0) { EventRepository.endEvent(any()) }
+    }
+
+    @Test
+    fun confirmPendingSpot_delegatesToRepository() {
+        every { EventRepository.confirmPendingSpot(5, any()) } returns "Inscrição confirmada com sucesso!"
+        viewModel = HomeViewModel()
+        viewModel.selectedEvent = sampleEvent(id = 5)
+        var message: String? = null
+
+        viewModel.confirmPendingSpot(sampleEvent(id = 5)) { message = it }
+
+        Assert.assertEquals("Inscrição confirmada com sucesso!", message)
+        verify { EventRepository.confirmPendingSpot(5, any()) }
+    }
+
+    @Test
+    fun declinePendingSpot_delegatesToRepository() {
+        every { EventRepository.declinePendingSpot(5, any()) } returns "Vaga recusada."
+        viewModel = HomeViewModel()
+        viewModel.selectedEvent = sampleEvent(id = 5)
+        var message: String? = null
+
+        viewModel.declinePendingSpot(sampleEvent(id = 5)) { message = it }
+
+        Assert.assertEquals("Vaga recusada.", message)
+        verify { EventRepository.declinePendingSpot(5, any()) }
+    }
+
+    @Test
+    fun hasPendingSpot_delegatesToRepository() {
+        every { EventRepository.hasPendingSpot(5, any()) } returns true
+        viewModel = HomeViewModel()
+
+        val result = viewModel.hasPendingSpot(5)
+
+        Assert.assertTrue(result)
+        verify { EventRepository.hasPendingSpot(5, any()) }
+    }
+
+    @Test
+    fun isOnWaitlist_delegatesToRepository() {
+        every { EventRepository.isOnWaitlist(5, any()) } returns true
+        viewModel = HomeViewModel()
+
+        val result = viewModel.isOnWaitlist(5)
+
+        Assert.assertTrue(result)
+        verify { EventRepository.isOnWaitlist(5, any()) }
+    }
+
+    @Test
+    fun getWaitlistPosition_delegatesToRepository() {
+        every { EventRepository.getWaitlistPosition(5, any()) } returns 2
+        viewModel = HomeViewModel()
+
+        val result = viewModel.getWaitlistPosition(5)
+
+        Assert.assertEquals(2, result)
+        verify { EventRepository.getWaitlistPosition(5, any()) }
     }
 }
