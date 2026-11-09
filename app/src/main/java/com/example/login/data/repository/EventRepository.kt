@@ -151,18 +151,136 @@ object EventRepository {
             .setValue(enrolledEventIds.toList())
     }
 
-    fun enroll(eventId: Int) {
+    fun enrollUser(eventId: Int, userId: String): String {
+        val event = allEvents.find { it.id == eventId } ?: return "Evento não encontrado."
+
+        if (event.isEnded) {
+            return "Este evento já encerrou. Inscrições desativadas."
+        }
+
+        val isCurrentlyEnrolled = event.enrolledUserIds.contains(userId) || enrolledEventIds.contains(eventId)
+
+        if (isCurrentlyEnrolled) {
+            // Cancel enrollment and offer spot to next student on waitlist if available
+            val newEnrolled = event.enrolledUserIds - userId
+            var newWaitlist = event.waitlistUserIds
+            var newPending = event.pendingConfirmationUserIds
+
+            if (newWaitlist.isNotEmpty() && (event.maxCapacity == 0 || (newEnrolled.size + newPending.size) < event.maxCapacity)) {
+                val promotedUser = newWaitlist.first()
+                newWaitlist = newWaitlist.drop(1)
+                newPending = newPending + promotedUser
+                val updated = event.copy(
+                    enrolledUserIds = newEnrolled,
+                    waitlistUserIds = newWaitlist,
+                    pendingConfirmationUserIds = newPending
+                )
+                updateEvent(updated)
+            } else {
+                val updated = event.copy(enrolledUserIds = newEnrolled, waitlistUserIds = newWaitlist)
+                updateEvent(updated)
+            }
+
+            enrolledEventIds = enrolledEventIds - eventId
+            syncWithDatabase()
+            return "Inscrição cancelada com sucesso! A vaga foi oferecida para o próximo aluno da lista de espera."
+        }
+
+        if (event.pendingConfirmationUserIds.contains(userId)) {
+            return confirmPendingSpot(eventId, userId)
+        }
+
+        if (event.waitlistUserIds.contains(userId)) {
+            // Leave waitlist
+            val newWaitlist = event.waitlistUserIds - userId
+            val updated = event.copy(waitlistUserIds = newWaitlist)
+            updateEvent(updated)
+            return "Você saiu da lista de espera."
+        }
+
+        if (event.isFull) {
+            // Event is full -> Join waitlist
+            val newWaitlist = event.waitlistUserIds + userId
+            val position = newWaitlist.size
+            val updated = event.copy(waitlistUserIds = newWaitlist)
+            updateEvent(updated)
+            return "Vagas esgotadas! Você entrou na Lista de Espera na posição #$position."
+        }
+
+        val newEnrolled = event.enrolledUserIds + userId
+        val updated = event.copy(enrolledUserIds = newEnrolled)
+        updateEvent(updated)
         enrolledEventIds = enrolledEventIds + eventId
         syncWithDatabase()
+        return "Inscrição realizada com sucesso!"
+    }
+
+    fun confirmPendingSpot(eventId: Int, userId: String): String {
+        val event = allEvents.find { it.id == eventId } ?: return "Evento não encontrado."
+
+        val newPending = event.pendingConfirmationUserIds - userId
+        val newEnrolled = event.enrolledUserIds + userId
+        val updated = event.copy(
+            enrolledUserIds = newEnrolled,
+            pendingConfirmationUserIds = newPending
+        )
+        updateEvent(updated)
+        enrolledEventIds = enrolledEventIds + eventId
+        syncWithDatabase()
+        return "Inscrição confirmada com sucesso! Seja bem-vindo ao evento."
+    }
+
+    fun declinePendingSpot(eventId: Int, userId: String): String {
+        val event = allEvents.find { it.id == eventId } ?: return "Evento não encontrado."
+
+        val newPending = event.pendingConfirmationUserIds - userId
+        var newWaitlist = event.waitlistUserIds
+        var finalPending = newPending
+
+        if (newWaitlist.isNotEmpty() && (event.maxCapacity == 0 || (event.currentEnrolledCount + finalPending.size) < event.maxCapacity)) {
+            val promotedUser = newWaitlist.first()
+            newWaitlist = newWaitlist.drop(1)
+            finalPending = finalPending + promotedUser
+        }
+
+        val updated = event.copy(
+            waitlistUserIds = newWaitlist,
+            pendingConfirmationUserIds = finalPending
+        )
+        updateEvent(updated)
+        return "Vaga recusada. A vaga foi disponibilizada para o próximo aluno da lista."
+    }
+
+    fun hasPendingSpot(eventId: Int, userId: String): Boolean {
+        val event = allEvents.find { it.id == eventId } ?: return false
+        return event.pendingConfirmationUserIds.contains(userId)
+    }
+
+    fun enroll(eventId: Int) {
+        val userId = auth.currentUser?.uid ?: "user_id"
+        enrollUser(eventId, userId)
     }
 
     fun unenroll(eventId: Int) {
-        enrolledEventIds = enrolledEventIds - eventId
-        syncWithDatabase()
+        val userId = auth.currentUser?.uid ?: "user_id"
+        enrollUser(eventId, userId)
     }
 
     fun isEnrolled(eventId: Int): Boolean {
-        return enrolledEventIds.contains(eventId)
+        val currentUserId = auth.currentUser?.uid
+        val event = allEvents.find { it.id == eventId }
+        return enrolledEventIds.contains(eventId) || (currentUserId != null && event?.enrolledUserIds?.contains(currentUserId) == true)
+    }
+
+    fun isOnWaitlist(eventId: Int, userId: String): Boolean {
+        val event = allEvents.find { it.id == eventId } ?: return false
+        return event.waitlistUserIds.contains(userId)
+    }
+
+    fun getWaitlistPosition(eventId: Int, userId: String): Int {
+        val event = allEvents.find { it.id == eventId } ?: return 0
+        val index = event.waitlistUserIds.indexOf(userId)
+        return if (index >= 0) index + 1 else 0
     }
 
     var favoriteEventsId by mutableStateOf(setOf<Int>())
@@ -201,6 +319,7 @@ object EventRepository {
     }
 
     fun clearLocalData() {
+        allEvents = defaultEventsList
         enrolledEventIds = emptySet()
         favoriteEventsId = emptySet()
     }

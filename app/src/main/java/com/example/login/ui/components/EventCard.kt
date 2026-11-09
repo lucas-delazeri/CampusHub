@@ -113,6 +113,9 @@ fun EventCard(
                             )
                         }
 
+                        val currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                        val hasPendingSpot = event.pendingConfirmationUserIds.contains(currentUserId)
+
                         if (event.isEnded) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Box(
@@ -125,6 +128,34 @@ fun EventCard(
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFFDC3545)
+                                )
+                            }
+                        } else if (hasPendingSpot) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(Color(0xFFE8F5E9), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = "VAGA LIBERADA!",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF2E7D32)
+                                )
+                            }
+                        } else if (event.isFull) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(Color(0xFFFFF3E0), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = "LOTADO",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFE65100)
                                 )
                             }
                         }
@@ -155,11 +186,16 @@ fun EventCard(
                             Icon(
                                 Icons.Default.People,
                                 contentDescription = null,
-                                tint = Color.Gray,
+                                tint = if (event.isFull) Color(0xFFE65100) else Color.Gray,
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(text = "${event.maxCapacity} vagas", fontSize = 13.sp, color = Color.Gray)
+                            Text(
+                                text = "${event.currentEnrolledCount}/${event.maxCapacity} vagas",
+                                fontSize = 13.sp,
+                                color = if (event.isFull) Color(0xFFE65100) else Color.Gray,
+                                fontWeight = if (event.isFull) FontWeight.Bold else FontWeight.Normal
+                            )
                         }
                     }
                 }

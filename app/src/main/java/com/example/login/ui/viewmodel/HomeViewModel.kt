@@ -140,18 +140,50 @@ class HomeViewModel : ViewModel() {
         return EventRepository.isEnrolled(eventId)
     }
 
+    fun hasPendingSpot(eventId: Int): Boolean {
+        val currentUserId = auth.currentUser?.uid ?: email
+        return EventRepository.hasPendingSpot(eventId, currentUserId)
+    }
+
+    fun isOnWaitlist(eventId: Int): Boolean {
+        val currentUserId = auth.currentUser?.uid ?: email
+        return EventRepository.isOnWaitlist(eventId, currentUserId)
+    }
+
+    fun getWaitlistPosition(eventId: Int): Int {
+        val currentUserId = auth.currentUser?.uid ?: email
+        return EventRepository.getWaitlistPosition(eventId, currentUserId)
+    }
+
+    fun confirmPendingSpot(event: Event, onResultMessage: (String) -> Unit) {
+        val currentUserId = auth.currentUser?.uid ?: email
+        val message = EventRepository.confirmPendingSpot(event.id, currentUserId)
+        if (selectedEvent?.id == event.id) {
+            selectedEvent = EventRepository.allEvents.find { it.id == event.id } ?: selectedEvent
+        }
+        onResultMessage(message)
+    }
+
+    fun declinePendingSpot(event: Event, onResultMessage: (String) -> Unit) {
+        val currentUserId = auth.currentUser?.uid ?: email
+        val message = EventRepository.declinePendingSpot(event.id, currentUserId)
+        if (selectedEvent?.id == event.id) {
+            selectedEvent = EventRepository.allEvents.find { it.id == event.id } ?: selectedEvent
+        }
+        onResultMessage(message)
+    }
+
     fun toggleEnrollment(event: Event, onResultMessage: (String) -> Unit) {
         if (event.isEnded) {
             onResultMessage("Este evento já encerrou. Ações de inscrição estão desativadas.")
             return
         }
-        if (EventRepository.isEnrolled(event.id)) {
-            EventRepository.unenroll(event.id)
-            onResultMessage("Inscrição cancelada com sucesso!")
-        } else {
-            EventRepository.enroll(event.id)
-            onResultMessage("Inscrição realizada com sucesso!")
+        val currentUserId = auth.currentUser?.uid ?: email
+        val message = EventRepository.enrollUser(event.id, currentUserId)
+        if (selectedEvent?.id == event.id) {
+            selectedEvent = EventRepository.allEvents.find { it.id == event.id } ?: selectedEvent
         }
+        onResultMessage(message)
     }
 
     fun toggleFavorite(event: Event, onResultMessage: (String) -> Unit) {

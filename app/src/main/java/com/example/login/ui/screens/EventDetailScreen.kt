@@ -1,6 +1,7 @@
 package com.example.login.ui.screens
 
 import com.example.login.data.utils.ImageUtils
+import com.google.firebase.auth.FirebaseAuth
 
 import android.content.Context
 import android.content.Intent
@@ -239,6 +240,8 @@ fun EventDetailScreen(
     currentUserId: String?,
     isTeacher: Boolean = false,
     onToggleEnroll: () -> Unit,
+    onConfirmSpot: (() -> Unit)? = null,
+    onDeclineSpot: (() -> Unit)? = null,
     onToggleFavorite: () -> Unit,
     onEditEvent: (() -> Unit)? = null,
     onEndEvent: (() -> Unit)? = null,
@@ -534,30 +537,148 @@ fun EventDetailScreen(
             lineHeight = 22.sp
         )
 
+        if (event.maxCapacity > 0) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (event.isFull) Color(0xFFFFF3E0) else Color(0xFFF1F8E9)
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "Vagas e Lotação",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = if (event.isFull) "Lotação máxima atingida (${event.currentEnrolledCount}/${event.maxCapacity} inscritos)"
+                               else "${event.remainingSpots} vaga(s) disponível(is) (${event.currentEnrolledCount}/${event.maxCapacity})",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (event.isFull) Color(0xFFE65100) else Color(0xFF2E7D32)
+                    )
+                    if (event.waitlistUserIds.isNotEmpty()) {
+                        Text(
+                            text = "Lista de Espera: ${event.waitlistUserIds.size} aluno(s) aguardando vaga",
+                            fontSize = 12.sp,
+                            color = Color(0xFFE65100)
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+        val hasPendingSpot = event.pendingConfirmationUserIds.contains(currentUserId)
+        val isOnWaitlist = event.waitlistUserIds.contains(currentUserId)
+        val waitlistPosition = if (isOnWaitlist) event.waitlistUserIds.indexOf(currentUserId) + 1 else 0
+
+        if (hasPendingSpot) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Vaga Liberada para Você!",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2E7D32)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Sua posição na lista de espera foi contemplada! Deseja confirmar sua presença neste evento?",
+                        fontSize = 13.sp,
+                        color = Color(0xFF1B5E20)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { onConfirmSpot?.invoke() },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                        ) {
+                            Text("Confirmar Vaga", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                        OutlinedButton(
+                            onClick = { onDeclineSpot?.invoke() },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Recusar Vaga", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFDC3545))
+                        }
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         val canEnroll = !event.isEnded
-        Button(
-            onClick = onToggleEnroll,
-            enabled = canEnroll,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (event.isEnded) Color.LightGray else if (isEnrolled) Color(0xFFDC3545) else Color(0xFF0F93FF),
-                disabledContainerColor = Color.LightGray
-            )
-        ) {
-            Text(
-                text = if (event.isEnded) "Evento Encerrado (Inscrições Fechadas)" else if (isEnrolled) "Cancelar Inscrição" else "Inscrever-se no Evento",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
+        val buttonText = when {
+            event.isEnded -> "Evento Encerrado (Inscrições Fechadas)"
+            isEnrolled -> "Cancelar Inscrição"
+            hasPendingSpot -> "Confirmar minha Vaga Reservada"
+            isOnWaitlist -> "Sair da Lista de Espera (Posição #$waitlistPosition)"
+            event.isFull -> "Vagas Esgotadas — Entrar na Lista de Espera"
+            else -> "Inscrever-se no Evento"
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        val buttonColor = when {
+            event.isEnded -> Color.LightGray
+            isEnrolled -> Color(0xFFDC3545)
+            hasPendingSpot -> Color(0xFF2E7D32)
+            isOnWaitlist -> Color(0xFFE65100)
+            event.isFull -> Color(0xFFFF9800)
+            else -> Color(0xFF0F93FF)
+        }
+        if (!hasPendingSpot) {
+            Button(
+                onClick = onToggleEnroll,
+                enabled = canEnroll,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = buttonColor,
+                    disabledContainerColor = Color.LightGray
+                )
+            ) {
+                Text(
+                    text = buttonText,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+        }
 
         Button(
             onClick = onToggleFavorite,

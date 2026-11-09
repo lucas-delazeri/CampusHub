@@ -174,6 +174,16 @@ fun MainHubScreen(
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
                     },
+                    onConfirmSpot = {
+                        viewModel.confirmPendingSpot(selectedEvent) { message ->
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onDeclineSpot = {
+                        viewModel.declinePendingSpot(selectedEvent) { message ->
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        }
+                    },
                     onToggleFavorite = {
                         viewModel.toggleFavorite(selectedEvent) { message ->
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
