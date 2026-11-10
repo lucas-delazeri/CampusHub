@@ -487,6 +487,37 @@ class EventRepositoryTest {
     }
 
     @Test
+    fun performCheckIn_firstTime_success_and_secondTime_singleValidationWarning() {
+        val eventRef = mockk<DatabaseReference>(relaxed = true)
+        every { mockDbRef.child("events").child(any()) } returns eventRef
+
+        val event = Event(id = 50, title = "CheckIn Event", enrolledUserIds = listOf("student_1"))
+        EventRepository.createEvent(event)
+
+        val result1 = EventRepository.performCheckIn(50, "student_1")
+        Assert.assertTrue(result1.contains("Check-in realizado com sucesso"))
+        Assert.assertTrue(EventRepository.isUserCheckedIn(50, "student_1"))
+
+        val result2 = EventRepository.performCheckIn(50, "student_1")
+        Assert.assertTrue(result2.contains("já foi registrada anteriormente"))
+    }
+
+    @Test
+    fun performCheckInFromPayload_validPayload_performsCheckIn() {
+        val eventRef = mockk<DatabaseReference>(relaxed = true)
+        every { mockDbRef.child("events").child(any()) } returns eventRef
+
+        val event = Event(id = 60, title = "QR Event", enrolledUserIds = listOf("student_2"))
+        EventRepository.createEvent(event)
+
+        val payload = com.example.login.data.utils.QrCodeUtils.getCheckInPayload(60, "student_2")
+        val result = EventRepository.performCheckInFromPayload(payload)
+
+        Assert.assertTrue(result.contains("Check-in realizado com sucesso"))
+        Assert.assertTrue(EventRepository.isUserCheckedIn(60, "student_2"))
+    }
+
+    @Test
     fun updateEvent_updatesEventInListAndDatabase() {
         val eventRef = mockk<DatabaseReference>(relaxed = true)
         every { mockDbRef.child("events").child("1") } returns eventRef

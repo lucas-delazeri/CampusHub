@@ -602,4 +602,28 @@ class HomeViewModelTest {
         Assert.assertEquals(2, result)
         verify { EventRepository.getWaitlistPosition(5, any()) }
     }
+
+    @Test
+    fun performCheckIn_delegatesToRepository() {
+        every { EventRepository.performCheckIn(5, "u1") } returns "Check-in realizado com sucesso!"
+        viewModel = HomeViewModel()
+        viewModel.selectedEvent = sampleEvent(id = 5)
+        var message: String? = null
+
+        viewModel.performCheckIn(5, "u1") { message = it }
+
+        Assert.assertEquals("Check-in realizado com sucesso!", message)
+        verify { EventRepository.performCheckIn(5, "u1") }
+    }
+
+    @Test
+    fun isUserCheckedIn_delegatesToRepository() {
+        every { EventRepository.isUserCheckedIn(5, any()) } returns true
+        viewModel = HomeViewModel()
+
+        val result = viewModel.isUserCheckedIn(5)
+
+        Assert.assertTrue(result)
+        verify { EventRepository.isUserCheckedIn(5, any()) }
+    }
 }
