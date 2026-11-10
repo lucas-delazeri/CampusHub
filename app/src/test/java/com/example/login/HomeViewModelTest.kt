@@ -25,13 +25,13 @@ class HomeViewModelTest {
     private lateinit var viewModel: HomeViewModel
     private lateinit var auth: FirebaseAuth
 
-    private fun sampleEvent(id: Int = 1, isEnded: Boolean = false) = Event(
+    private fun sampleEvent(id: Int = 1, isEnded: Boolean = false, organizer: String = "Estudante") = Event(
         id = id,
         title = "title",
         description = "description",
         date = "02/02/2000",
         location = "location",
-        organizer = "organizer",
+        organizer = organizer,
         category = "category",
         isEnded = isEnded,
         latitude = 48.8566,
@@ -40,8 +40,13 @@ class HomeViewModelTest {
 
     @Before
     fun setUp() {
+        val user = mockk<FirebaseUser>(relaxed = true)
+        every { user.uid } returns "u123"
+        every { user.displayName } returns "Estudante"
+        every { user.email } returns "email@test.com"
+
         auth = mockk<FirebaseAuth>(relaxed = true)
-        every { auth.currentUser } returns null
+        every { auth.currentUser } returns user
         mockkStatic(FirebaseAuth::class)
         every { FirebaseAuth.getInstance() } returns auth
 
@@ -50,6 +55,7 @@ class HomeViewModelTest {
         every { EventRepository.loadUserFavoriteEvents() } just Runs
         every { EventRepository.loadUserRole() } just Runs
         every { EventRepository.listenToEvents() } just Runs
+        every { EventRepository.updateEvent(any()) } just Runs
         every { EventRepository.userRole } returns "professor"
         every { EventRepository.allEvents } returns listOf(sampleEvent(id = 5))
     }
@@ -61,6 +67,7 @@ class HomeViewModelTest {
 
     @Test
     fun userProperties_fallbackValuesWhenUserNull() {
+        every { auth.currentUser } returns null
         viewModel = HomeViewModel()
 
         Assert.assertEquals("Estudante", viewModel.userName)
@@ -141,6 +148,7 @@ class HomeViewModelTest {
     @Test
     fun createEvent_teacher_createsEventWithDefaults() {
         val user = mockk<FirebaseUser>()
+        every { user.uid } returns "u123"
         every { user.displayName } returns "Professor"
         every { user.email } returns "silva@escola.com"
         every { auth.currentUser } returns user
@@ -487,7 +495,22 @@ class HomeViewModelTest {
 
         viewModel.updateEvent(5, "t", "d", "01/01", "l", "c") { message = it }
 
-        Assert.assertEquals("Apenas professores podem editar eventos.", message)
+        Assert.assertEquals("Apenas o organizador criador deste evento pode editá-lo.", message)
+        verify(exactly = 0) { EventRepository.updateEvent(any()) }
+    }
+
+    @Test
+    fun updateEvent_notCreator_isRejected() {
+        every { EventRepository.userRole } returns "professor"
+        val otherEvent = sampleEvent(id = 5, organizer = "OutroProf").copy(organizerId = "other_uid")
+        every { EventRepository.allEvents } returns listOf(otherEvent)
+        viewModel = HomeViewModel()
+        viewModel.userName = "Profe"
+        var message: String? = null
+
+        viewModel.updateEvent(5, "t", "d", "01/01", "l", "c") { message = it }
+
+        Assert.assertEquals("Apenas o organizador criador deste evento pode editá-lo.", message)
         verify(exactly = 0) { EventRepository.updateEvent(any()) }
     }
 
@@ -540,7 +563,7 @@ class HomeViewModelTest {
 
         viewModel.endEvent(5) { message = it }
 
-        Assert.assertEquals("Apenas professores podem encerrar eventos.", message)
+        Assert.assertEquals("Apenas o organizador criador deste evento pode encerrá-lo.", message)
         verify(exactly = 0) { EventRepository.endEvent(any()) }
     }
 

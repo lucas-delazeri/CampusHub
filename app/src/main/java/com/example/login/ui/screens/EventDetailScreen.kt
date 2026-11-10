@@ -762,7 +762,17 @@ fun EventDetailScreen(
             }
         }
 
-        if (isTeacher) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val isCreator = isTeacher && (
+            event.organizerId.isBlank() ||
+            (currentUserId != null && event.organizerId == currentUserId) ||
+            (currentUser?.uid != null && event.organizerId == currentUser.uid) ||
+            event.organizer.equals(currentUser?.displayName ?: "", ignoreCase = true) ||
+            event.organizer.equals(currentUser?.email ?: "", ignoreCase = true) ||
+            event.organizer.isBlank()
+        )
+
+        if (isCreator) {
             Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),

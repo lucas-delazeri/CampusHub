@@ -34,6 +34,29 @@ class HomeViewModel : ViewModel() {
     val isTeacher: Boolean
         get() = userRole.equals("professor", ignoreCase = true)
 
+    fun canEditEvent(event: Event?): Boolean {
+        if (event == null) return false
+        if (!isTeacher) return false
+
+        val uid = auth.currentUser?.uid ?: ""
+        val currentOrg = userName.trim()
+        val currentEmail = email.trim()
+        val org = event.organizer.trim()
+        val orgId = event.organizerId.trim()
+
+        if (orgId.isNotBlank() && uid.isNotBlank()) {
+            return orgId == uid
+        }
+
+        if (org.isNotBlank()) {
+            return org.equals(currentOrg, ignoreCase = true) ||
+                    org.equals(currentEmail, ignoreCase = true) ||
+                    org.equals(uid, ignoreCase = true)
+        }
+
+        return true
+    }
+
     fun createEvent(
         title: String,
         description: String,
@@ -62,7 +85,8 @@ class HomeViewModel : ViewModel() {
             description = description,
             date = date,
             location = location,
-            organizer = userName,
+            organizer = if (userName.isBlank()) "Professor" else userName,
+            organizerId = auth.currentUser?.uid ?: "",
             category = if (category.isBlank()) "Geral" else category,
             isEnded = isEnded,
             latitude = lat ?: -23.550520,
@@ -88,16 +112,16 @@ class HomeViewModel : ViewModel() {
         isEnded: Boolean = false,
         onResultMessage: (String) -> Unit
     ) {
-        if (!isTeacher) {
-            onResultMessage("Apenas professores podem editar eventos.")
+        val currentEvent = EventRepository.allEvents.find { it.id == eventId } ?: run {
+            onResultMessage("Evento não encontrado.")
+            return
+        }
+        if (!canEditEvent(currentEvent)) {
+            onResultMessage("Apenas o organizador criador deste evento pode editá-lo.")
             return
         }
         if (title.isBlank() || description.isBlank() || date.isBlank() || location.isBlank()) {
             onResultMessage("Preencha todos os campos obrigatórios.")
-            return
-        }
-        val currentEvent = EventRepository.allEvents.find { it.id == eventId } ?: run {
-            onResultMessage("Evento não encontrado.")
             return
         }
         val updated = currentEvent.copy(
@@ -121,8 +145,12 @@ class HomeViewModel : ViewModel() {
     }
 
     fun endEvent(eventId: Int, onResultMessage: (String) -> Unit) {
-        if (!isTeacher) {
-            onResultMessage("Apenas professores podem encerrar eventos.")
+        val currentEvent = EventRepository.allEvents.find { it.id == eventId } ?: run {
+            onResultMessage("Evento não encontrado.")
+            return
+        }
+        if (!canEditEvent(currentEvent)) {
+            onResultMessage("Apenas o organizador criador deste evento pode encerrá-lo.")
             return
         }
         EventRepository.endEvent(eventId)
