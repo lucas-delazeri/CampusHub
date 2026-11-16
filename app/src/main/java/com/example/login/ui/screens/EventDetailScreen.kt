@@ -1646,7 +1646,7 @@ fun EventDetailScreen(
                     ) {
                         Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = Color.White)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Escanear QR Code com a Câmera", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text("Escanear QR Code", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
 
                     if (filteredStudents.isEmpty()) {
