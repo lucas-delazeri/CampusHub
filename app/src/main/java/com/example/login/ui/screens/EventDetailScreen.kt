@@ -7,12 +7,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.content.ContextCompat
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.Manifest
 import android.graphics.BitmapFactory
 import android.media.MediaPlayer
 import android.media.MediaRecorder
@@ -251,6 +258,7 @@ fun EventDetailScreen(
     onConfirmSpot: (() -> Unit)? = null,
     onDeclineSpot: (() -> Unit)? = null,
     onPerformCheckIn: ((String) -> Unit)? = null,
+    onPerformCheckInFromPayload: ((String) -> Unit)? = null,
     onToggleFavorite: () -> Unit,
     onEditEvent: (() -> Unit)? = null,
     onEndEvent: (() -> Unit)? = null,
@@ -283,8 +291,27 @@ fun EventDetailScreen(
 
     var showStudentQrModal by remember { mutableStateOf(false) }
     var showOrganizerCheckInModal by remember { mutableStateOf(false) }
+    var showCameraScannerModal by remember { mutableStateOf(false) }
     var selectedStudentQrToShow by remember { mutableStateOf<Pair<String, String>?>(null) }
     var checkInSearchQuery by remember { mutableStateOf("") }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            showCameraScannerModal = true
+        } else {
+            Toast.makeText(context, "Permissão de câmera necessária para escanear QR Code.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun openQrCameraScanner() {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            showCameraScannerModal = true
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
 
     val takePictureLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
@@ -1609,6 +1636,19 @@ fun EventDetailScreen(
                         singleLine = true
                     )
 
+                    Button(
+                        onClick = { openQrCameraScanner() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F93FF)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Escanear QR Code com a Câmera", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
+
                     if (filteredStudents.isEmpty()) {
                         Text(
                             text = "Nenhum aluno inscrito encontrado.",
@@ -1672,23 +1712,19 @@ fun EventDetailScreen(
                                                     )
                                                 }
 
-                                                Button(
-                                                    onClick = {
-                                                        if (isCheckedIn) {
-                                                            Toast.makeText(context, "Atenção: Presença de '$studentId' JÁ foi registrada anteriormente!", Toast.LENGTH_SHORT).show()
-                                                        } else {
-                                                            onPerformCheckIn?.invoke(studentId)
-                                                        }
-                                                    },
-                                                    colors = ButtonDefaults.buttonColors(
-                                                        containerColor = if (isCheckedIn) Color(0xFF81C784) else Color(0xFF2E7D32)
-                                                    ),
-                                                    shape = RoundedCornerShape(6.dp)
+                                                Box(
+                                                    modifier = Modifier
+                                                        .background(
+                                                            if (isCheckedIn) Color(0xFFE8F5E9) else Color(0xFFF1F5F9),
+                                                            RoundedCornerShape(6.dp)
+                                                        )
+                                                        .padding(horizontal = 10.dp, vertical = 6.dp)
                                                 ) {
                                                     Text(
-                                                        text = if (isCheckedIn) "Validado" else "Check-in",
+                                                        text = if (isCheckedIn) "✓ Validado" else "Aguardando Leitura",
                                                         fontSize = 11.sp,
-                                                        fontWeight = FontWeight.Bold
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = if (isCheckedIn) Color(0xFF2E7D32) else Color.Gray
                                                     )
                                                 }
                                             }
@@ -1733,6 +1769,104 @@ fun EventDetailScreen(
             confirmButton = {
                 TextButton(onClick = { selectedStudentQrToShow = null }) {
                     Text("Fechar")
+                }
+            }
+        )
+    }
+
+    if (showCameraScannerModal) {
+        val lifecycleOwner = LocalLifecycleOwner.current
+        var isScanned by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            containerColor = Color.White,
+            onDismissRequest = { showCameraScannerModal = false },
+            title = {
+                Text(
+                    text = "Escanear QR Code",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F93FF)
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(280.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Aponte a câmera para o QR Code de check-in do aluno",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    AndroidView(
+                        factory = { ctx ->
+                            val previewView = androidx.camera.view.PreviewView(ctx)
+                            val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+
+                            cameraProviderFuture.addListener({
+                                val cameraProvider = cameraProviderFuture.get()
+                                val preview = androidx.camera.core.Preview.Builder().build().also {
+                                    it.setSurfaceProvider(previewView.surfaceProvider)
+                                }
+
+                                val imageAnalysis = androidx.camera.core.ImageAnalysis.Builder()
+                                    .setBackpressureStrategy(androidx.camera.core.ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                                    .build()
+
+                                imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { imageProxy ->
+                                    if (!isScanned) {
+                                        val buffer = imageProxy.planes[0].buffer
+                                        val data = ByteArray(buffer.remaining())
+                                        buffer.get(data)
+                                        val width = imageProxy.width
+                                        val height = imageProxy.height
+
+                                        try {
+                                            val source = com.google.zxing.PlanarYUVLuminanceSource(
+                                                data, width, height, 0, 0, width, height, false
+                                            )
+                                            val binaryBitmap = com.google.zxing.BinaryBitmap(com.google.zxing.common.HybridBinarizer(source))
+                                            val result = com.google.zxing.MultiFormatReader().decode(binaryBitmap)
+
+                                            if (result != null && result.text.startsWith("CAMPUSHUB_CHECKIN:")) {
+                                                isScanned = true
+                                                onPerformCheckInFromPayload?.invoke(result.text)
+                                                showCameraScannerModal = false
+                                            }
+                                        } catch (_: Exception) {
+                                        }
+                                    }
+                                    imageProxy.close()
+                                }
+
+                                try {
+                                    cameraProvider.unbindAll()
+                                    cameraProvider.bindToLifecycle(
+                                        lifecycleOwner,
+                                        androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA,
+                                        preview,
+                                        imageAnalysis
+                                    )
+                                } catch (_: Exception) {
+                                }
+                            }, ContextCompat.getMainExecutor(ctx))
+
+                            previewView
+                        },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(12.dp))
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showCameraScannerModal = false }) {
+                    Text("Cancelar")
                 }
             }
         )
